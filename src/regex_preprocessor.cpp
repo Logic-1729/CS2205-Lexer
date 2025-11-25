@@ -4,79 +4,90 @@
 #include <stdexcept>
 #include <algorithm>
 
-// 判断是否为操作数（字母、数字、字符集等）
-bool isLetter(const std::string& s) {
-    if (s.empty()) return false;
-    
-    // 如果是单个字符，只要不是保留的操作符，就是操作数
-    if (s.length() == 1) {
-        char c = s[0];
-        return c != '(' && c != ')' && c != '*' && c != '|' && c != '+' && c != '#';
+// 定义全局常量：内部使用的显式连接符
+const char EXPLICIT_CONCAT_OP = '&';
+
+// 解析 [...] 内容为 CharSet
+CharSet parseCharSet(const std::string& content) {
+    CharSet cs;
+    cs.isEpsilon = false;
+    for (size_t k = 0; k < content.length(); ++k) {
+        if (k + 2 < content.length() && content[k+1] == '-') {
+            char start = content[k];
+            char end = content[k+2];
+            cs.addRange(start, end);
+            k += 2;
+        } else {
+            cs.addRange(content[k], content[k]);
+        }
     }
-    
-    // 如果是多个字符（例如 [a-z] 或转义字符），直接视为操作数
-    return true; 
+    return cs;
 }
 
-// 预处理：将 [a-z] 等视为单个 Token，不展开
-std::vector<std::string> preprocessRegex(const std::string& re) {
-    std::vector<std::string> tokens;
+std::vector<Token> preprocessRegex(const std::string& re) {
+    std::vector<Token> tokens;
     int n = re.size();
     for (int i = 0; i < n; ++i) {
-        if (re[i] != '[') {
-            tokens.push_back(std::string(1, re[i]));
-        } else {
-            // 处理 [ ... ]，将其整体提取作为一个 Token
-            std::string charsetContent = "[";
+        char c = re[i];
+        
+        if (c == '[') {
+            // 解析字符集
+            std::string content;
             int j = i + 1;
-            while (j < n && re[j] != ']') {
-                charsetContent += re[j];
+            bool escape = false;
+            while (j < n) {
+                if (re[j] == ']' && !escape) break;
+                content += re[j];
                 j++;
             }
             
             if (j < n) {
-                charsetContent += "]";
-                tokens.push_back(charsetContent);
-                i = j; // 跳过 ']'
+                tokens.push_back(Token(parseCharSet(content)));
+                i = j; 
             } else {
                 throw std::runtime_error("Unmatched '[' in regex");
             }
+        } else if (c == '(' || c == ')' || c == '*' || c == '|' || c == '?' || c == '+') {
+            tokens.push_back(Token(c));
+        } else {
+            // 普通字符
+            tokens.push_back(Token(CharSet(c)));
         }
     }
     return tokens;
 }
 
-// 插入隐式连接符 '+'
-std::vector<std::string> insertConcatSymbols(const std::vector<std::string>& tokens) {
+std::vector<Token> insertConcatSymbols(const std::vector<Token>& tokens) {
     if (tokens.empty()) return {};
 
-    std::vector<std::string> result;
+    std::vector<Token> result;
     result.push_back(tokens[0]);
 
     for (size_t i = 1; i < tokens.size(); ++i) {
-        const std::string& prev = tokens[i - 1];
-        const std::string& curr = tokens[i];
+        const Token& prev = tokens[i - 1];
+        const Token& curr = tokens[i];
 
         bool needConcat = false;
 
-        bool prevIsOperand = isLetter(prev);
-        bool currIsOperand = isLetter(curr);
-
         // 规则：
-        // 1. 操作数/右括号/星号 后面接 操作数/左括号 时，需要加连接符
-        // (a) (b) -> (a)+(b)
-        // a b -> a+b
-        // a ( -> a+(
-        // ) a -> )+a
-        // * a -> *+a
+        // 1. Operand 后面接 Operand 或 '('
+        // 2. ) * ? + 后面接 Operand 或 '('
         
-        if ((prevIsOperand || prev == ")" || prev == "*") && 
-            (currIsOperand || curr == "(")) {
+        bool prevIsUnarySuffix = (prev.isOperator() && (prev.opVal == '*' || prev.opVal == '?' || prev.opVal == '+'));
+        bool prevIsCloseParen = (prev.isOperator() && prev.opVal == ')');
+        bool prevIsOperand = prev.isOperand();
+        
+        bool currIsOperand = curr.isOperand();
+        bool currIsOpenParen = (curr.isOperator() && curr.opVal == '(');
+
+        if ((prevIsOperand || prevIsUnarySuffix || prevIsCloseParen) && 
+            (currIsOperand || currIsOpenParen)) {
             needConcat = true;
         }
 
         if (needConcat) {
-            result.push_back("+");
+            // 使用全局定义的连接符
+            result.push_back(Token(EXPLICIT_CONCAT_OP)); 
         }
         result.push_back(curr);
     }

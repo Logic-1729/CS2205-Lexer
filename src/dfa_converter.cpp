@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <map>
 
-// Helper: get all states reachable via ε from a set of IDs
 std::set<int> getEpsilonClosure(const std::set<int>& states, const NFAUnit& nfa) {
     std::set<int> closure = states;
     std::queue<int> q;
@@ -12,8 +11,7 @@ std::set<int> getEpsilonClosure(const std::set<int>& states, const NFAUnit& nfa)
     while (!q.empty()) {
         int currentId = q.front(); q.pop();
         for (const Edge& e : nfa.edges) {
-            // 使用 ->id 访问
-            if (e.startName->id == currentId && e.tranSymbol.empty()) { // ε-edge
+            if (e.startName->id == currentId && e.symbol.isEpsilon) { 
                 if (closure.insert(e.endName->id).second) {
                     q.push(e.endName->id);
                 }
@@ -27,16 +25,20 @@ DFAState epsilonClosure(const std::set<int>& states, const NFAUnit& nfa) {
     auto closureSet = getEpsilonClosure(states, nfa);
     DFAState state;
     state.nfaStates = closureSet;
-    // stateName 不再是必须的核心逻辑，但为了调试可以生成一个简短的名字
-    // 这里暂且留空，或者由 buildDFAFromNFA 统一分配
     return state;
 }
 
-DFAState move(const DFAState& state, const std::string& symbol, const NFAUnit& nfa) {
+// 修改 move：检查字符集是否有交集。
+// 简单实现：如果 edge.symbol == inputSymbol。
+// 更高级实现：如果 edge.symbol 与 inputSymbol 有交集。
+// 在此我们假设 NFA 构建时，输入符号就是 NFA 边上的那些 CharSet。
+DFAState move(const DFAState& state, const CharSet& symbol, const NFAUnit& nfa) {
     std::set<int> targetStates;
     for (int nfaStateId : state.nfaStates) {
         for (const Edge& e : nfa.edges) {
-            if (e.startName->id == nfaStateId && e.tranSymbol == symbol) {
+            // 这里比较的是 CharSet 的相等性。
+            // 如果要支持重叠区间，需要更复杂的逻辑（区间树或分裂）。
+            if (e.startName->id == nfaStateId && e.symbol == symbol) {
                 targetStates.insert(e.endName->id);
             }
         }
@@ -47,7 +49,7 @@ DFAState move(const DFAState& state, const std::string& symbol, const NFAUnit& n
 }
 
 bool isTransitionInVector(int fromId, int toId,
-                          const std::string& symbol,
+                          const CharSet& symbol,
                           const std::vector<DFATransition>& transitions) {
     for (const auto& t : transitions) {
         if (t.fromStateId == fromId &&
@@ -62,46 +64,44 @@ bool isTransitionInVector(int fromId, int toId,
 void buildDFAFromNFA(const NFAUnit& nfa,
                      std::vector<DFAState>& dfaStates,
                      std::vector<DFATransition>& dfaTransitions) {
-    // Map: NFA状态集合(set<int>) -> DFA状态ID(int)
     std::map<std::set<int>, int> existingStates;
     int dfaCounter = 0;
 
-    // Get initial state
     std::set<int> initSet = {nfa.start->id};
     DFAState initState = epsilonClosure(initSet, nfa);
     initState.id = dfaCounter++;
-    initState.stateName = std::to_string(initState.id); // 简单的名字： "0"
+    initState.stateName = std::to_string(initState.id);
     
     dfaStates.push_back(initState);
     existingStates[initState.nfaStates] = initState.id;
 
+    // 收集所有非 ε 的输入符号 (CharSet)
+    std::vector<CharSet> inputs;
+    for (const Edge& e : nfa.edges) {
+        if (!e.symbol.isEpsilon) {
+            // 简单去重
+            bool found = false;
+            for(const auto& existing : inputs) if(existing == e.symbol) found = true;
+            if(!found) inputs.push_back(e.symbol);
+        }
+    }
+
     for (size_t i = 0; i < dfaStates.size(); ++i) {
         DFAState current = dfaStates[i]; 
 
-        std::set<std::string> symbols;
-        for (const Edge& e : nfa.edges) {
-            if (!e.tranSymbol.empty()) {
-                symbols.insert(e.tranSymbol);
-            }
-        }
-
-        for (const std::string& symbol : symbols) {
+        for (const auto& symbol : inputs) {
             DFAState moved = move(current, symbol, nfa);
             if (!moved.nfaStates.empty()) {
                 DFAState closure = epsilonClosure(moved.nfaStates, nfa);
 
-                // 检查该状态是否已存在
                 auto it = existingStates.find(closure.nfaStates);
                 if (it == existingStates.end()) {
-                    // 新状态
                     closure.id = dfaCounter++;
                     closure.stateName = std::to_string(closure.id);
                     dfaStates.push_back(closure);
                     existingStates[closure.nfaStates] = closure.id;
                 } else {
-                    // 已存在，复用 ID
                     closure.id = it->second;
-                    // 复用已存在的 stateName
                     closure.stateName = dfaStates[it->second].stateName;
                 }
 

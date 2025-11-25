@@ -7,22 +7,23 @@
 
 int main() {
     std::string regularExpression;
-    std::cout << "请输入正则表达式 (支持字符集如 [abc] 或 [a-z], 操作符: ( ) * |): ";
+    std::cout << "请输入正则表达式 (支持字符集如 [abc] 或 [a-z], 操作符: ( ) * | ? +): ";
     if (!(std::cin >> regularExpression)) return 0;
 
     try {
-        // Step 1: 预处理
-        std::vector<std::string> tokens = preprocessRegex(regularExpression);
+        // Step 1: 预处理 (返回 vector<Token>)
+        std::vector<Token> tokens = preprocessRegex(regularExpression);
 
-        // Step 2: 插入连接符
-        std::vector<std::string> tokensWithConcat = insertConcatSymbols(tokens);
+        // Step 2: 插入连接符 (返回 vector<Token>)
+        std::vector<Token> tokensWithConcat = insertConcatSymbols(tokens);
 
-        // Step 3: 中缀转后缀
+        // Step 3: 中缀转后缀 (构造函数接受 vector<Token>)
         InfixToPostfix converter(tokensWithConcat);
         converter.convert();
-        const std::vector<std::string>& postfix = converter.getPostfix();
+        // 获取 vector<Token> 类型的后缀表达式
+        const std::vector<Token>& postfix = converter.getPostfix();
 
-        // Step 4: 后缀转 NFA
+        // Step 4: 后缀转 NFA (接受 vector<Token>)
         NFAUnit nfa = regexToNFA(postfix);
 
         // Step 5: 可视化 NFA
@@ -34,7 +35,7 @@ int main() {
         std::vector<DFATransition> dfaTransitions;
         buildDFAFromNFA(nfa, dfaStates, dfaTransitions);
 
-        // Step 7: 标记接受状态 (修改为 Int ID 访问)
+        // Step 7: 标记接受状态 (使用 ID)
         int originalNFAEndId = nfa.end->id;
 
         // Step 8: 可视化 DFA

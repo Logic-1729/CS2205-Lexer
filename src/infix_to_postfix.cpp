@@ -3,51 +3,59 @@
 #include <stack>
 #include <stdexcept>
 
-InfixToPostfix::InfixToPostfix(const std::vector<std::string>& infix)
+InfixToPostfix::InfixToPostfix(const std::vector<Token>& infix)
     : infix_(infix) {}
 
-bool InfixToPostfix::isLetter(const std::string& token) {
-    return ::isLetter(token); // 调用全局 isLetter
-}
-
 int InfixToPostfix::getISP(char op) {
+    // 栈内优先级
     static const std::map<char, int> isp = {
-        {'+', 3}, {'|', 5}, {'*', 7}, {'(', 1}, {')', 8}, {'#', 0}
+        {'|', 5}, 
+        {'*', 7}, {'?', 7}, {'^', 7}, 
+        {'(', 1}, {')', 8}, {'#', 0}
     };
+    
+    // 使用全局常量判断连接符
+    if (op == EXPLICIT_CONCAT_OP) return 3; 
+    if (op == '+') return 7; // One or more (unary)
+    
     auto it = isp.find(op);
-    if (it == isp.end()) {
-        throw std::runtime_error("Unknown operator in ISP: " + std::string(1, op));
-    }
+    if (it == isp.end()) throw std::runtime_error(std::string("Unknown operator in ISP: ") + op);
     return it->second;
 }
 
 int InfixToPostfix::getICP(char op) {
+    // 栈外优先级
     static const std::map<char, int> icp = {
-        {'+', 2}, {'|', 4}, {'*', 6}, {'(', 8}, {')', 1}, {'#', 0}
+        {'|', 4}, 
+        {'*', 6}, {'?', 6}, 
+        {'(', 8}, {')', 1}, {'#', 0}
     };
+    
+    // 使用全局常量判断连接符
+    if (op == EXPLICIT_CONCAT_OP) return 2; 
+    if (op == '+') return 6; // One or more
+    
     auto it = icp.find(op);
-    if (it == icp.end()) {
-        throw std::runtime_error("Unknown operator in ICP: " + std::string(1, op));
-    }
+    if (it == icp.end()) throw std::runtime_error(std::string("Unknown operator in ICP: ") + op);
     return it->second;
 }
 
 void InfixToPostfix::convert() {
     postfix_.clear();
-    std::vector<std::string> input = infix_;
-    input.push_back("#");
-    std::stack<std::string> opStack;
-    opStack.push("#");
+    std::vector<Token> input = infix_;
+    input.push_back(Token('#')); // End marker
+    std::stack<Token> opStack;
+    opStack.push(Token('#'));
 
     size_t i = 0;
     while (i < input.size()) {
-        const std::string& token = input[i];
-        if (isLetter(token)) {
+        const Token& token = input[i];
+        if (token.isOperand()) {
             postfix_.push_back(token);
             ++i;
         } else {
-            char c2 = token[0];
-            char c1 = opStack.top()[0];
+            char c2 = token.opVal;
+            char c1 = opStack.top().opVal;
 
             if (getISP(c1) < getICP(c2)) {
                 opStack.push(token);
@@ -56,9 +64,7 @@ void InfixToPostfix::convert() {
                 postfix_.push_back(opStack.top());
                 opStack.pop();
             } else {
-                if (c1 == '#' && c2 == '#') {
-                    break;
-                }
+                if (c1 == '#' && c2 == '#') break;
                 opStack.pop();
                 ++i;
             }
@@ -66,6 +72,6 @@ void InfixToPostfix::convert() {
     }
 }
 
-const std::vector<std::string>& InfixToPostfix::getPostfix() const {
+const std::vector<Token>& InfixToPostfix::getPostfix() const {
     return postfix_;
 }
