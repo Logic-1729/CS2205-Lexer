@@ -1,70 +1,69 @@
 # Regex to NFA to DFA Converter
 
-这是一个基于 C++ 实现的正则表达式引擎核心组件演示项目。该项目能够解析正则表达式，将其转换为非确定性有限自动机 (NFA)，并进一步转换为确定性有限自动机 (DFA)。项目还支持生成 Graphviz DOT 文件以可视化状态机结构。
+这是一个基于 C++ 实现的正则表达式引擎核心组件演示项目。该项目能够解析正则表达式，将其转换为非确定性有限自动机 (NFA)，并进一步转换为确定性有限自动机 (DFA)。项目旨在展示词法分析生成器的底层原理，并提供可视化的状态转换图。
 
 ## 项目原理
 
-本项目遵循经典的词法分析生成器设计原理，参考了 [Charlee Li 的正则表达式解析](https://cn.charlee.li/parse-regex-with-dfa.html) 相关理论。主要流程如下：
+本项目遵循经典的词法分析生成器设计原理，主要流程如下：
 
 ### 1. 正则表达式预处理 (Preprocessing)
-*   **显式连接符**: 正则表达式中的连接通常是隐式的（如 `ab`）。为了便于后续计算，程序会在相邻的符号之间插入显式的连接符 `+`（例如将 `ab` 转换为 `a+b`）。
-*   **字符集处理**: 将 `[a-z]` 或 `[_a-zA-Z]` 等字符集识别为一个完整的 Token 单元，而不是将其拆解为多个字符。这简化了 NFA 的图形结构，使其更易于阅读。
+*   **Token化**: 将输入字符串解析为 Token 流，识别操作符（`*`, `|`, `?`, `+`）和操作数。
+*   **显式连接符**: 自动在相邻的操作数之间插入显式的连接符 `&`，简化后续解析逻辑。
+*   **字符集处理**: 支持 `[...]` 语法，将其解析为字符区间集合（`CharSet`），而非简单的字符串。
 
 ### 2. 中缀转后缀 (Infix to Postfix)
-*   使用 **Shunting-yard 算法** 将中缀正则表达式（如 `a+b*`）转换为后缀表达式（逆波兰表达式，如 `ab*+`），以便于通过堆栈进行自动机构建。
+*   使用 **Shunting-yard 算法** 将中缀正则表达式转换为后缀表达式（逆波兰表达式），处理操作符优先级（`*` > `+` > `&` > `|`）。
 
 ### 3. NFA 构建 (Thompson's Construction)
-*   采用 **Thompson 构造法**。通过递归地组合小的 NFA 片段来构建复杂的 NFA。
-*   **优化**: 本项目在处理 **连接 (Concatenation)** 操作时进行了优化。与标准的 Thompson 构造（增加一条中间 $\epsilon$ 边）不同，本项目直接合并前一个 NFA 的终态和后一个 NFA 的初态。这显著减少了生成的节点数和 $\epsilon$ 边。
-*   支持的操作包括：
-    *   **Union (|)**: 并联两个 NFA。
-    *   **Concatenation (+)**: 串联两个 NFA（节点合并优化）。
-    *   **Kleene Star (*)**: 闭包操作。
+*   采用 **Thompson 构造法**，通过递归组合小的 NFA 片段构建复杂的 NFA。
+*   **智能指针管理**: 使用 `std::shared_ptr` 管理节点内存，避免内存泄漏。
+*   支持的操作：
+    *   **Union (|)**: 并联。
+    *   **Concatenation (&)**: 串联（含节点合并优化）。
+    *   **Kleene Star (*)**: 闭包。
+    *   **Option (?)**: 零次或一次（语法糖）。
+    *   **Plus (+)**: 一次或多次（语法糖）。
 
 ### 4. DFA 转换 (Subset Construction)
 *   采用 **子集构造法 (Powerset Construction)**。
-*   **Epsilon-Closure**: 计算从某个状态出发，仅通过 $\epsilon$ 边能到达的所有状态集合。
-*   **DFA 状态生成**: DFA 的每一个状态对应 NFA 的一个状态子集，从而消除非确定性。
+*   **Epsilon-Closure 缓存**: 优化了闭包计算，使用缓存避免重复遍历，提升性能。
+*   **DFA 状态最小化**: （当前版本主要关注构建，未包含 Hopcroft 最小化算法）。
 
 ## 代码结构
 
-项目源码位于 `src/` 目录下，主要文件功能如下：
+项目源码位于 `src/` 目录下：
 
 | 文件名 | 功能描述 |
 | :--- | :--- |
-| `main.cpp` | 程序入口。负责协调预处理、NFA构建、DFA转换及可视化的整体流程。 |
-| `nfa_dfa_builder.h` | 头文件。定义了 `Node`, `Edge`, `NFAUnit`, `DFAState` 等核心数据结构及函数声明。 |
-| `regex_preprocessor.cpp` | 负责正则表达式的清洗、Token化（处理 `[...]`）以及插入显式连接符 `+`。 |
-| `infix_to_postfix.cpp` | 实现将中缀正则表达式列表转换为后缀表达式的逻辑。 |
-| `nfa_builder.cpp` | 实现了基于后缀表达式构建 NFA 的核心逻辑，包含节点合并优化。 |
-| `dfa_converter.cpp` | 实现了从 NFA 到 DFA 的转换逻辑 (子集构造法、Epsilon闭包计算)。 |
-| `visualize.cpp` | 负责将生成的 NFA 和 DFA 数据结构输出为 Graphviz `.dot` 文件格式。 |
-| `build_and_run.sh` | 自动化构建脚本，用于编译代码并执行，同时自动调用 `dot` 命令生成图片。 |
+| `main.cpp` | 程序入口。处理命令行参数，协调解析、构建及输出流程。 |
+| `nfa.h` | 定义核心数据结构：`Node`, `Edge`, `NFAUnit`, `CharSet`。 |
+| `dfa.h` | 定义 DFA 相关结构：`DFAState`, `DFATransition`。 |
+| `regex_parser.h` | 定义解析器接口、Token 结构及异常类 `RegexSyntaxError`。 |
+| `regex_preprocessor.cpp` | 实现正则预处理、字符集解析及 Token 流生成。 |
+| `infix_to_postfix.cpp` | 实现 Shunting-yard 算法。 |
+| `nfa_builder.cpp` | 实现 Thompson 构造法构建 NFA。 |
+| `dfa_converter.cpp` | 实现 NFA 到 DFA 的转换逻辑（含闭包缓存）。 |
+| `visualize.cpp` | 负责生成 Graphviz `.dot` 文件。 |
 
 ## 环境配置
 
-在运行本项目之前，请确保您的环境满足以下要求：
+### 1. 基础环境
+*   **操作系统**: Linux / macOS (推荐), Windows (需 WSL 或 MinGW)。
+*   **编译器**: 支持 **C++17** 的编译器（GCC 7+, Clang 5+, MSVC 19.14+）。
+*   **构建系统**: **CMake** 3.10 或更高版本。
 
-### 1. 操作系统
-*   **Linux / macOS**: 推荐环境，直接支持 shell 脚本。
-*   **Windows**: 建议使用 WSL (Windows Subsystem for Linux) 或 MinGW/Cygwin 环境。
+### 2. 可视化工具
+*   **Graphviz**: 用于将生成的 `.dot` 文件转换为图片。
+    *   Ubuntu/Debian: `sudo apt-get install graphviz`
+    *   macOS: `brew install graphviz`
 
-### 2. 编译器
-需要支持 **C++17** 标准的编译器。
-*   `g++` (GCC) 7.0 或更高版本。
+## 构建与运行
 
-### 3. 可视化工具 (Graphviz)
-为了生成 `.png` 图片，需要安装 Graphviz。
+项目提供了一个自动化脚本 `build_and_run.sh`，集成了构建、运行和图片生成流程。
 
-*   **Ubuntu/Debian**: `sudo apt-get install graphviz`
-*   **macOS**: `brew install graphviz`
-*   **Windows**: 请从 Graphviz 官网下载安装包，并将 `dot` 命令添加到系统 PATH 环境变量中。
+### 快速开始
 
-## 使用说明
-
-项目根目录提供了一个脚本，可完成编译、运行和图片生成的一站式操作。
-
-1.  **赋予脚本执行权限**:
+1.  **赋予脚本权限**:
     ```bash
     chmod +x build_and_run.sh
     ```
@@ -74,16 +73,17 @@
     ./build_and_run.sh
     ```
 
-3.  **输入正则表达式**:
-    程序启动后，会提示输入正则表达式。支持的符号包括 `( )`, `*`, `|`, `[...]`。
-    
-    **输入示例**:
-    ```text
-    (if)|[_a-zA-Z][_0-9a-zA-Z]*
-    ```
+3.  **交互式输入**:
+    脚本会提示输入要处理的正则表达式个数以及具体的表达式。
+    *   支持的符号：`*`, `|`, `()`, `[]`, `?`, `+`。
+    *   示例输入：`(a|b)*abb` 或 `[a-z][a-z0-9]*`。
 
-4.  **查看结果**:
-    *   终端将输出 NFA 和 DFA 的状态转换表文本。
-    *   根目录下会自动生成以下文件：
-        *   `nfa_graph.dot` & `nfa.png`: NFA 的结构图。
-        *   `dfa_graph.dot` & `dfa.png`: DFA 的结构图。
+### 手动构建 (CMake)
+
+如果您只需编译而不运行测试脚本：
+
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
