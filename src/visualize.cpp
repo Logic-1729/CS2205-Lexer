@@ -5,37 +5,45 @@
 #include <set>
 #include <vector>
 #include <string>
+#include <algorithm>
+
+// 辅助：通过ID查找DFA状态名
+std::string getDFAStateName(int id, const std::vector<DFAState>& dfaStates) {
+    if (id >= 0 && id < dfaStates.size()) {
+        return dfaStates[id].stateName;
+    }
+    return "?";
+}
 
 void displayNFA(const NFAUnit& nfa) {
     std::cout << "NFA States:\n";
-    std::cout << "Start: " << nfa.start->nodeName << "\n"; // 指针访问
-    std::cout << "End: " << nfa.end->nodeName << "\n\n";   // 指针访问
+    std::cout << "Start: " << nfa.start->debugName << "\n";
+    std::cout << "End: " << nfa.end->debugName << "\n\n";
 
     std::cout << "Transitions:\n";
     for (size_t i = 0; i < nfa.edges.size(); ++i) {
         const Edge& e = nfa.edges[i];
         std::string label = e.tranSymbol.empty() ? "ε" : e.tranSymbol;
-        // 指针访问
-        std::cout << "  " << e.startName->nodeName << " --(" << label << ")--> " << e.endName->nodeName << "\n";
+        std::cout << "  " << e.startName->debugName << " --(" << label << ")--> " << e.endName->debugName << "\n";
     }
     std::cout << "End of NFA\n" << std::endl;
 }
 
 void displayDFA(const std::vector<DFAState>& dfaStates,
                 const std::vector<DFATransition>& dfaTransitions,
-                const std::string& originalNFAEnd) {
+                int originalNFAEndId) {
     std::cout << "DFA States:\n";
     for (size_t i = 0; i < dfaStates.size(); ++i) {
         const auto& state = dfaStates[i];
-        std::cout << "State " << state.stateName << " (NFA: ";
-        for (const auto& s : state.nfaStates) {
-            std::cout << s << " ";
+        std::cout << "State " << state.stateName << " (NFA IDs: {";
+        for (int id : state.nfaStates) {
+            std::cout << id << ",";
         }
-        std::cout << ")";
+        std::cout << "})";
         if (i == 0) {
             std::cout << " [Initial]";
         }
-        if (state.nfaStates.find(originalNFAEnd) != state.nfaStates.end()) {
+        if (state.nfaStates.find(originalNFAEndId) != state.nfaStates.end()) {
             std::cout << " [Accepting]";
         }
         std::cout << "\n";
@@ -43,7 +51,9 @@ void displayDFA(const std::vector<DFAState>& dfaStates,
 
     std::cout << "\nDFA Transitions:\n";
     for (const auto& t : dfaTransitions) {
-        std::cout << "  " << t.fromState.stateName << " --(" << t.transitionSymbol << ")--> " << t.toState.stateName << "\n";
+        std::string fromName = getDFAStateName(t.fromStateId, dfaStates);
+        std::string toName = getDFAStateName(t.toStateId, dfaStates);
+        std::cout << "  " << fromName << " --(" << t.transitionSymbol << ")--> " << toName << "\n";
     }
 }
 
@@ -57,14 +67,13 @@ void generateDotFile_NFA(const NFAUnit& nfa, const std::string& filename) {
     file << "digraph NFA {\n";
     file << "  rankdir=LR;\n";
     file << "  node [shape=circle];\n";
-    file << "  " << nfa.end->nodeName << " [shape=doublecircle];\n"; // 指针访问
+    file << "  " << nfa.end->debugName << " [shape=doublecircle];\n"; 
     file << "  __start0 [shape=none, label=\"\"];\n";
-    file << "  __start0 -> " << nfa.start->nodeName << ";\n\n"; // 指针访问
+    file << "  __start0 -> " << nfa.start->debugName << ";\n\n"; 
 
     for (const Edge& e : nfa.edges) {
         std::string label = e.tranSymbol.empty() ? "ε" : e.tranSymbol;
-        // 指针访问
-        file << "  " << e.startName->nodeName << " -> " << e.endName->nodeName << " [label=\"" << label << "\"];\n";
+        file << "  " << e.startName->debugName << " -> " << e.endName->debugName << " [label=\"" << label << "\"];\n";
     }
     file << "}\n";
     file.close();
@@ -73,7 +82,7 @@ void generateDotFile_NFA(const NFAUnit& nfa, const std::string& filename) {
 
 void generateDotFile_DFA(const std::vector<DFAState>& dfaStates,
                          const std::vector<DFATransition>& dfaTransitions,
-                         const std::string& originalNFAEnd,
+                         int originalNFAEndId,
                          const std::string& filename) {
     std::ofstream file(filename);
     if (!file) {
@@ -86,7 +95,7 @@ void generateDotFile_DFA(const std::vector<DFAState>& dfaStates,
     file << "  node [shape=circle];\n";
 
     for (const auto& state : dfaStates) {
-        if (state.nfaStates.find(originalNFAEnd) != state.nfaStates.end()) {
+        if (state.nfaStates.find(originalNFAEndId) != state.nfaStates.end()) {
             file << "  " << state.stateName << " [shape=doublecircle];\n";
         }
     }
@@ -98,7 +107,9 @@ void generateDotFile_DFA(const std::vector<DFAState>& dfaStates,
     file << "\n";
 
     for (const auto& t : dfaTransitions) {
-        file << "  " << t.fromState.stateName << " -> " << t.toState.stateName
+        std::string fromName = getDFAStateName(t.fromStateId, dfaStates);
+        std::string toName = getDFAStateName(t.toStateId, dfaStates);
+        file << "  " << fromName << " -> " << toName
              << " [label=\"" << t.transitionSymbol << "\"];\n";
     }
     file << "}\n";

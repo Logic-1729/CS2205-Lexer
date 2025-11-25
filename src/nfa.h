@@ -12,18 +12,19 @@
 
 // 实际存储节点数据的结构体
 struct NodeImpl {
-    std::string nodeName;
+    int id; // 唯一整数 ID，用于核心逻辑和快速比较
+    std::string debugName; // 仅用于调试和可视化
     
     // 构造函数
-    NodeImpl(std::string name) : nodeName(std::move(name)) {}
+    NodeImpl(int id, std::string name) : id(id), debugName(std::move(name)) {}
 };
 
 // 使用 shared_ptr 管理节点生命周期
 using Node = std::shared_ptr<NodeImpl>;
 
 struct Edge {
-    Node startName; // 仅仅持有引用
-    Node endName;   // 仅仅持有引用
+    Node startName; 
+    Node endName;   
     std::string tranSymbol; // "" 表示 ε 转移
 };
 

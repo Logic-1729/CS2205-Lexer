@@ -12,9 +12,11 @@
 
 // DFA 状态
 struct DFAState {
-    std::set<std::string> nfaStates;
-    std::string stateName;
+    int id;                     // DFA 状态的唯一 ID
+    std::set<int> nfaStates;    // 对应的 NFA 状态 ID 集合
+    std::string stateName;      // 用于可视化，例如 "0" 或 "{q1,q2}"
 
+    // 比较操作符重载，用于 Map/Set 的 key
     bool operator==(const DFAState& other) const {
         return nfaStates == other.nfaStates;
     }
@@ -26,8 +28,8 @@ struct DFAState {
 
 // DFA 转移
 struct DFATransition {
-    DFAState fromState;
-    DFAState toState;
+    int fromStateId;    // 使用 ID 记录转移
+    int toStateId;      // 使用 ID 记录转移
     std::string transitionSymbol;
 };
 
@@ -35,7 +37,7 @@ struct DFATransition {
 // NFA → DFA 转换
 // ==============================
 
-DFAState epsilonClosure(const std::set<std::string>& states, const NFAUnit& nfa);
+DFAState epsilonClosure(const std::set<int>& states, const NFAUnit& nfa);
 DFAState move(const DFAState& state, const std::string& symbol, const NFAUnit& nfa);
 
 void buildDFAFromNFA(const NFAUnit& nfa,
@@ -48,11 +50,11 @@ void buildDFAFromNFA(const NFAUnit& nfa,
 
 void displayDFA(const std::vector<DFAState>& dfaStates,
                 const std::vector<DFATransition>& dfaTransitions,
-                const std::string& originalNFAEnd);
+                int originalNFAEndId);
 
 void generateDotFile_DFA(const std::vector<DFAState>& dfaStates,
                          const std::vector<DFATransition>& dfaTransitions,
-                         const std::string& originalNFAEnd,
+                         int originalNFAEndId,
                          const std::string& filename = "dfa.dot");
 
 #endif // DFA_H

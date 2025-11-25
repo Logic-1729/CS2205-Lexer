@@ -9,14 +9,17 @@ static int globalNodeCounter = 0;
 
 // 创建智能指针管理的节点
 Node createNode() {
-    return std::make_shared<NodeImpl>("q" + std::to_string(globalNodeCounter++));
+    int id = globalNodeCounter++;
+    return std::make_shared<NodeImpl>(id, "q" + std::to_string(id));
 }
+
+// ... (其馀函数 createBasicElement, createUnion, createConcat, createStar, regexToNFA 保持不变)
+// 注意：之前的 createConcat 使用了指针比较 (edge.startName == right.start)，这依然有效，因为 shared_ptr 比较的是地址。
 
 NFAUnit createBasicElement(const std::string& symbol) {
     NFAUnit unit;
     unit.start = createNode();
     unit.end = createNode();
-    // 创建一条边 start -> end
     unit.edges.push_back({unit.start, unit.end, symbol});
     return unit;
 }
@@ -26,44 +29,32 @@ NFAUnit createUnion(const NFAUnit& left, const NFAUnit& right) {
     result.start = createNode();
     result.end = createNode();
 
-    // 复制所有边 (复制的是 shared_ptr，开销很小)
     result.edges = left.edges;
     result.edges.insert(result.edges.end(), right.edges.begin(), right.edges.end());
 
-    // 新起点通过 ε 到达 left 和 right 的起点
     result.edges.push_back({result.start, left.start, ""});
     result.edges.push_back({result.start, right.start, ""});
 
-    // left 和 right 的终点通过 ε 到达新终点
     result.edges.push_back({left.end, result.end, ""});
     result.edges.push_back({right.end, result.end, ""});
 
     return result;
 }
 
-// 优化：连接操作不引入新节点，而是合并节点
 NFAUnit createConcat(const NFAUnit& left, const NFAUnit& right) {
-    NFAUnit result = left; // 浅拷贝，持有左侧的边引用
-    
-    // 策略：我们要“融合” left.end 和 right.start。
-    // 简单做法：遍历 right 的所有边，如果边的起点是 right.start，将其改为 left.end。
-    // 智能指针优势：我们只需要修改指针指向，不需要移动内存。
+    NFAUnit result = left; 
     
     std::vector<Edge> rightEdges = right.edges;
     for (auto& edge : rightEdges) {
-        // 比较指针地址是否相同，或者比较名字
         if (edge.startName == right.start) { 
-            edge.startName = left.end; // 让 right 的边从 left 的终点出发
+            edge.startName = left.end; 
         }
         if (edge.endName == right.start) {
-            edge.endName = left.end;   // 如果有自环或指向 start 的边，也修正
+            edge.endName = left.end;   
         }
     }
     
-    // 将调整后的 right 边加入 result
     result.edges.insert(result.edges.end(), rightEdges.begin(), rightEdges.end());
-    
-    // 新的终点是 right 的终点
     result.end = right.end;
 
     return result;
@@ -76,16 +67,9 @@ NFAUnit createStar(const NFAUnit& unit) {
 
     result.edges = unit.edges;
 
-    // ε from new start to unit start
     result.edges.push_back({result.start, unit.start, ""});
-    
-    // ε from unit end to new end
     result.edges.push_back({unit.end, result.end, ""});
-    
-    // ε from unit end to unit start (loop)
     result.edges.push_back({unit.end, unit.start, ""});
-    
-    // ε from new start to new end (skip, 匹配空串)
     result.edges.push_back({result.start, result.end, ""});
 
     return result;

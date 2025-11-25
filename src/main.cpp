@@ -34,12 +34,12 @@ int main() {
         std::vector<DFATransition> dfaTransitions;
         buildDFAFromNFA(nfa, dfaStates, dfaTransitions);
 
-        // Step 7: 标记接受状态 (修改为指针访问)
-        std::string originalNFAEnd = nfa.end->nodeName;
+        // Step 7: 标记接受状态 (修改为 Int ID 访问)
+        int originalNFAEndId = nfa.end->id;
 
         // Step 8: 可视化 DFA
-        displayDFA(dfaStates, dfaTransitions, originalNFAEnd);
-        generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEnd, "dfa_graph.dot");
+        displayDFA(dfaStates, dfaTransitions, originalNFAEndId);
+        generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEndId, "dfa_graph.dot");
 
         std::cout << "流程完成！\n";
     
