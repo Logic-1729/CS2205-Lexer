@@ -39,8 +39,7 @@ int main() {
         displayDFA(dfaStates, dfaTransitions, originalNFAEnd);
         generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEnd, "dfa_graph.dot");
 
-        std::cout << "流程完成！请使用 Graphviz 查看 nfa_graph.dot 和 dfa_graph.dot。\n";
-        std::cout << "或者运行根目录下的 build_and_run.sh 脚本直接生成 PNG 图片。\n";
+        std::cout << "流程完成！";
     
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
