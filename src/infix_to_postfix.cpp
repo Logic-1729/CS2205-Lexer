@@ -7,14 +7,17 @@ InfixToPostfix::InfixToPostfix(const std::vector<Token>& infix)
     : infix_(infix) {}
 
 int InfixToPostfix::getISP(char op) {
+    // 栈内优先级 (In-Stack Priority)
+    // 修正后：* > 连接 > |
     static const std::map<char, int> isp = {
-        {'|', 5}, 
+        {'|', 3},  // 优先级最低 (原为5)
         {'*', 7}, {'?', 7}, 
         {'(', 1}, {')', 8}, {'#', 0}
     };
     
-    if (op == EXPLICIT_CONCAT_OP) return 3; 
-    if (op == '+') return 7; 
+    // 显式连接符优先级需高于 | 但低于 *
+    if (op == EXPLICIT_CONCAT_OP) return 5; // (原为3)
+    if (op == '+') return 7; // 闭包优先级最高
     
     auto it = isp.find(op);
     if (it == isp.end()) throw RegexSyntaxError("Unknown operator in ISP table: " + std::string(1, op));
@@ -22,13 +25,15 @@ int InfixToPostfix::getISP(char op) {
 }
 
 int InfixToPostfix::getICP(char op) {
+    // 栈外优先级 (In-Coming Priority)
     static const std::map<char, int> icp = {
-        {'|', 4}, 
+        {'|', 2},  // 优先级最低 (原为4)
         {'*', 6}, {'?', 6}, 
         {'(', 8}, {')', 1}, {'#', 0}
     };
     
-    if (op == EXPLICIT_CONCAT_OP) return 2; 
+    // 显式连接符优先级需高于 | 但低于 *
+    if (op == EXPLICIT_CONCAT_OP) return 4; // (原为2)
     if (op == '+') return 6; 
     
     auto it = icp.find(op);
