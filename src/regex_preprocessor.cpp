@@ -1,9 +1,19 @@
 #include "nfa_dfa_builder.h"
 #include <cctype>
 #include <iostream>
+#include <stdexcept>
 
 bool isLetter(const std::string& s) {
     if (s.empty()) return false;
+    // 如果是预处理生成的单个字符，通常长度为1
+    if (s.length() == 1) {
+        char ch = s[0];
+        return ( (ch >= 'a' && ch <= 'z') ||
+                 (ch >= 'A' && ch <= 'Z') ||
+                 (ch >= '0' && ch <= '9') ||
+                 ch == '_' || ch == '-' );
+    }
+    // 兼容旧逻辑，允许多字符作为单一token（如未拆分的字符串）
     for (char ch : s) {
         if (!( (ch >= 'a' && ch <= 'z') ||
                (ch >= 'A' && ch <= 'Z') ||
@@ -22,10 +32,26 @@ std::vector<std::string> preprocessRegex(const std::string& re) {
         if (re[i] != '[') {
             tokens.push_back(std::string(1, re[i]));
         } else {
+            // 处理 [abc] -> (a|b|c)
+            std::string charsetContent;
             int j = i + 1;
-            while (j < n && re[j] != ']') ++j;
+            while (j < n && re[j] != ']') {
+                charsetContent += re[j];
+                j++;
+            }
+            
             if (j < n) {
-                tokens.push_back(re.substr(i + 1, j - i - 1));
+                // 找到了闭合的 ]
+                if (!charsetContent.empty()) {
+                    tokens.push_back("(");
+                    for (size_t k = 0; k < charsetContent.length(); ++k) {
+                        tokens.push_back(std::string(1, charsetContent[k]));
+                        if (k < charsetContent.length() - 1) {
+                            tokens.push_back("|");
+                        }
+                    }
+                    tokens.push_back(")");
+                }
                 i = j; // skip ']'
             } else {
                 throw std::runtime_error("Unmatched '[' in regex");
@@ -45,7 +71,6 @@ std::vector<std::string> insertConcatSymbols(const std::vector<std::string>& tok
         const std::string& prev = tokens[i - 1];
         const std::string& curr = tokens[i];
 
-        // 需要插入连接符的情况：
         bool needConcat = false;
 
         // 1. prev 是字母/字符集 且 curr 是字母/字符集 或 '('
@@ -66,11 +91,5 @@ std::vector<std::string> insertConcatSymbols(const std::vector<std::string>& tok
         }
         result.push_back(curr);
     }
-
-    // 调试输出
-    std::cout << "After inserting '+' : ";
-    for (const auto& t : result) std::cout << t << " ";
-    std::cout << std::endl;
-
     return result;
 }

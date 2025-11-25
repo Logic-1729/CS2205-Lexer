@@ -1,0 +1,15 @@
+digraph DFA {
+  rankdir=LR;
+  node [shape=circle];
+  q0q2q4q6q7 [shape=doublecircle];
+  q0q1q2q4q5q7 [shape=doublecircle];
+  q0q2q3q4q5q7 [shape=doublecircle];
+  __start0 [shape=none, label=""];
+  __start0 -> q0q2q4q6q7;
+
+  q0q2q4q6q7 -> q0q1q2q4q5q7 [label="a"];
+  q0q1q2q4q5q7 -> q0q1q2q4q5q7 [label="a"];
+  q0q1q2q4q5q7 -> q0q2q3q4q5q7 [label="b"];
+  q0q2q3q4q5q7 -> q0q1q2q4q5q7 [label="a"];
+  q0q2q3q4q5q7 -> q0q2q3q4q5q7 [label="b"];
+}
