@@ -1,3 +1,6 @@
+好的，这是根据当前项目结构更新后的 `README.md`。它反映了我们引入的更改，包括构建系统（CMake）、文件组织方式以及新的功能特性。
+
+```markdown
 # Regex to NFA to DFA Converter
 
 这是一个基于 C++ 实现的正则表达式引擎核心组件演示项目。该项目能够解析正则表达式，将其转换为非确定性有限自动机 (NFA)，并进一步转换为确定性有限自动机 (DFA)。项目旨在展示词法分析生成器的底层原理，并提供可视化的状态转换图。
@@ -87,3 +90,28 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
+```
+
+生成的可执行文件为 `regex_automata`。
+
+### 运行参数
+
+可执行文件支持指定输出目录：
+
+```bash
+./regex_automata "output_directory_path"
+```
+*   程序会从标准输入读取一个正则表达式。
+*   生成的 `nfa_graph.dot` 和 `dfa_graph.dot` 将保存在指定目录中。
+
+## 输出结果
+
+脚本会自动为每个正则表达式创建一个独立的文件夹（名称经过安全清洗），包含：
+*   `nfa_graph.dot`: NFA 的 Graphviz 描述文件。
+*   `nfa.png`: NFA 的可视化图片。
+*   `dfa_graph.dot`: DFA 的 Graphviz 描述文件。
+*   `dfa.png`: DFA 的可视化图片。
+
+---
+*注意：生成的文件夹名称可能会保留部分特殊字符（如括号），在终端操作时请使用引号包裹路径。*
+```
