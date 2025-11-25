@@ -13,12 +13,11 @@ int InfixToPostfix::getISP(char op) {
         {'(', 1}, {')', 8}, {'#', 0}
     };
     
-    // 优先级判断使用常量
     if (op == EXPLICIT_CONCAT_OP) return 3; 
-    if (op == '+') return 7; // 一次或多次 (+) 优先级同 *
+    if (op == '+') return 7; 
     
     auto it = isp.find(op);
-    if (it == isp.end()) throw std::runtime_error(std::string("Unknown operator in ISP: ") + op);
+    if (it == isp.end()) throw RegexSyntaxError("Unknown operator in ISP table: " + std::string(1, op));
     return it->second;
 }
 
@@ -33,7 +32,7 @@ int InfixToPostfix::getICP(char op) {
     if (op == '+') return 6; 
     
     auto it = icp.find(op);
-    if (it == icp.end()) throw std::runtime_error(std::string("Unknown operator in ICP: ") + op);
+    if (it == icp.end()) throw RegexSyntaxError("Unknown operator in ICP table: " + std::string(1, op));
     return it->second;
 }
 
@@ -52,6 +51,10 @@ void InfixToPostfix::convert() {
             ++i;
         } else {
             char c2 = token.opVal;
+            // 安全性检查：栈不应为空
+            if (opStack.empty()) {
+                throw RegexSyntaxError("Internal Error: Operator stack empty during conversion.");
+            }
             char c1 = opStack.top().opVal;
 
             if (getISP(c1) < getICP(c2)) {
@@ -61,11 +64,25 @@ void InfixToPostfix::convert() {
                 postfix_.push_back(opStack.top());
                 opStack.pop();
             } else {
-                if (c1 == '#' && c2 == '#') break;
-                opStack.pop();
-                ++i;
+                if (c1 == '#' && c2 == '#') {
+                    // 正常结束，跳出循环
+                    break;
+                }
+                // 匹配括号的情况
+                if (c1 == '(' && c2 == ')') {
+                    opStack.pop();
+                    ++i;
+                } else {
+                    // 其他相等的优先级通常意味着语法错误（除了#和括号）
+                    throw RegexSyntaxError("Mismatched parenthesis or invalid operator sequence.");
+                }
             }
         }
+    }
+    
+    // 检查最后栈是否只剩 #
+    if (!opStack.empty() && opStack.top().opVal != '#') {
+         throw RegexSyntaxError("Unbalanced operators or parentheses in regex.");
     }
 }
 

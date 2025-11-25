@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdlib> // for system()
+#include <cstdlib>
 
 int main(int argc, char* argv[]) {
     std::string outputDir = ".";
@@ -12,8 +12,6 @@ int main(int argc, char* argv[]) {
         outputDir = argv[1];
     }
 
-    // 修复：使用 \"./path\" 格式，防止路径以 - 开头导致 mkdir 报错
-    // 注意：如果 outputDir 已经包含 "./" 前缀（脚本中已处理），这里重复加也没问题
     std::string mkdirCmd;
     if (outputDir[0] == '-') {
         mkdirCmd = "mkdir -p \"./" + outputDir + "\"";
@@ -21,14 +19,11 @@ int main(int argc, char* argv[]) {
         mkdirCmd = "mkdir -p \"" + outputDir + "\"";
     }
     
-    // 消除未使用返回值的警告
     if (system(mkdirCmd.c_str()) != 0) {
         std::cerr << "Warning: Failed to create directory '" << outputDir << "'" << std::endl;
-        // 不退出，尝试继续运行（可能目录已存在或有写入权限）
     }
 
     std::string regularExpression;
-    // 读取输入
     if (!(std::cin >> regularExpression)) return 0;
 
     try {
@@ -48,7 +43,6 @@ int main(int argc, char* argv[]) {
 
         // Step 5: 可视化 NFA
         displayNFA(nfa);
-        // 确保路径连接正确
         std::string nfaPath = outputDir + "/nfa_graph.dot";
         generateDotFile_NFA(nfa, nfaPath);
         std::cout << "Generated: " << nfaPath << std::endl;
@@ -69,8 +63,13 @@ int main(int argc, char* argv[]) {
 
         std::cout << "流程完成！\n";
     
+    } catch (const RegexSyntaxError& e) {
+        std::cerr << "\n[Syntax Error]: Failed to parse regex.\n";
+        std::cerr << "  Reason: " << e.what() << "\n";
+        return 1;
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "\n[System Error]: An unexpected error occurred.\n";
+        std::cerr << "  Details: " << e.what() << "\n";
         return 1;
     }
 

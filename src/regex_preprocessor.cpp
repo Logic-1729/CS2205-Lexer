@@ -4,10 +4,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-// ==========================================
-// 全局常量定义
-// ==========================================
-// 使用 '&' 作为内部连接符，避免与 '+' (一次或多次) 冲突
+// 定义全局常量
 const char EXPLICIT_CONCAT_OP = '&';
 
 // 解析 [...] 内容为 CharSet
@@ -18,6 +15,9 @@ CharSet parseCharSet(const std::string& content) {
         if (k + 2 < content.length() && content[k+1] == '-') {
             char start = content[k];
             char end = content[k+2];
+            if (start > end) {
+                throw RegexSyntaxError("Invalid range in character class: " + std::string(1, start) + "-" + std::string(1, end));
+            }
             cs.addRange(start, end);
             k += 2;
         } else {
@@ -41,10 +41,15 @@ std::vector<Token> preprocessRegex(const std::string& re) {
                 j++;
             }
             if (j < n) {
-                tokens.push_back(Token(parseCharSet(content)));
+                try {
+                    tokens.push_back(Token(parseCharSet(content)));
+                } catch (const RegexSyntaxError& e) {
+                    // 捕获并重新抛出，增加位置信息
+                    throw RegexSyntaxError(std::string(e.what()) + " at index " + std::to_string(i));
+                }
                 i = j; 
             } else {
-                throw std::runtime_error("Unmatched '[' in regex");
+                throw RegexSyntaxError("Unmatched '[' at index " + std::to_string(i));
             }
         } else if (c == '(' || c == ')' || c == '*' || c == '|' || c == '?' || c == '+') {
             tokens.push_back(Token(c));
@@ -67,9 +72,6 @@ std::vector<Token> insertConcatSymbols(const std::vector<Token>& tokens) {
 
         bool needConcat = false;
 
-        // 规则：
-        // 1. Operand 后面接 Operand 或 '('
-        // 2. ) * ? + 后面接 Operand 或 '('
         bool prevIsUnarySuffix = (prev.isOperator() && (prev.opVal == '*' || prev.opVal == '?' || prev.opVal == '+'));
         bool prevIsCloseParen = (prev.isOperator() && prev.opVal == ')');
         bool prevIsOperand = prev.isOperand();
@@ -83,7 +85,6 @@ std::vector<Token> insertConcatSymbols(const std::vector<Token>& tokens) {
         }
 
         if (needConcat) {
-            // 使用全局常量
             result.push_back(Token(EXPLICIT_CONCAT_OP)); 
         }
         result.push_back(curr);

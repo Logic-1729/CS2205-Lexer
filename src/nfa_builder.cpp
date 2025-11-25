@@ -83,30 +83,31 @@ NFAUnit regexToNFA(const std::vector<Token>& postfix) {
 
     for (const Token& token : postfix) {
         if (token.isOperator()) {
-            if (token.opVal == '|') {
+            // 双目操作符
+            if (token.opVal == '|' || token.opVal == EXPLICIT_CONCAT_OP) {
+                if (stk.size() < 2) throw RegexSyntaxError("Missing operands for operator '" + std::string(1, token.opVal) + "'.");
                 auto right = stk.top(); stk.pop();
                 auto left = stk.top(); stk.pop();
-                stk.push(createUnion(left, right));
-            } else if (token.opVal == EXPLICIT_CONCAT_OP) { // 使用全局常量匹配
-                auto right = stk.top(); stk.pop();
-                auto left = stk.top(); stk.pop();
-                stk.push(createConcat(left, right));
-            } else if (token.opVal == '*') {
+                
+                if (token.opVal == '|') stk.push(createUnion(left, right));
+                else stk.push(createConcat(left, right));
+            } 
+            // 单目操作符
+            else if (token.opVal == '*' || token.opVal == '?' || token.opVal == '+') {
+                if (stk.empty()) throw RegexSyntaxError("Missing operand for operator '" + std::string(1, token.opVal) + "'.");
                 auto top = stk.top(); stk.pop();
-                stk.push(createStar(top));
-            } else if (token.opVal == '?') {
-                auto top = stk.top(); stk.pop();
-                stk.push(createQuestion(top));
-            } else if (token.opVal == '+') {
-                auto top = stk.top(); stk.pop();
-                stk.push(createPlus(top));
+                
+                if (token.opVal == '*') stk.push(createStar(top));
+                else if (token.opVal == '?') stk.push(createQuestion(top));
+                else stk.push(createPlus(top));
             }
         } else {
             stk.push(createBasicElement(token.operandVal));
         }
     }
 
-    if (stk.size() != 1) throw std::runtime_error("Invalid postfix expression");
+    if (stk.size() != 1) throw RegexSyntaxError("Invalid regex: Resulting NFA stack has " + std::to_string(stk.size()) + " elements (should be 1). Check for unbalanced operators.");
+    
     std::cout << "Regex converted to NFA successfully!" << std::endl;
     return stk.top();
 }

@@ -4,13 +4,25 @@
 #include <string>
 #include <vector>
 #include <variant>
+#include <stdexcept>
 #include "nfa.h" 
 
 // ==========================================
 // 全局常量声明
 // ==========================================
-// 显式连接符（用于内部表示连接操作，避免与用户输入的 '+' 冲突）
 extern const char EXPLICIT_CONCAT_OP;
+
+// ==========================================
+// 自定义异常类
+// ==========================================
+class RegexSyntaxError : public std::runtime_error {
+public:
+    // 构造函数，接收错误信息
+    explicit RegexSyntaxError(const std::string& message) 
+        : std::runtime_error(message) {}
+        
+    // 可选：如果有需要，可以添加记录错误位置的成员
+};
 
 // ==========================================
 // Token 定义
@@ -26,6 +38,12 @@ struct Token {
     
     bool isOperator() const { return type == OPERATOR; }
     bool isOperand() const { return type == OPERAND; }
+    
+    // 辅助：获取 Token 的字符串表示，用于错误提示
+    std::string toString() const {
+        if (isOperator()) return std::string(1, opVal);
+        return operandVal.toString();
+    }
 };
 
 // ==============================
