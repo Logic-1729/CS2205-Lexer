@@ -7,8 +7,9 @@
 // 全局节点计数器
 static int globalNodeCounter = 0;
 
+// 创建智能指针管理的节点
 Node createNode() {
-    return {"q" + std::to_string(globalNodeCounter++)};
+    return std::make_shared<NodeImpl>("q" + std::to_string(globalNodeCounter++));
 }
 
 NFAUnit createBasicElement(const std::string& symbol) {
@@ -25,7 +26,7 @@ NFAUnit createUnion(const NFAUnit& left, const NFAUnit& right) {
     result.start = createNode();
     result.end = createNode();
 
-    // 复制所有边
+    // 复制所有边 (复制的是 shared_ptr，开销很小)
     result.edges = left.edges;
     result.edges.insert(result.edges.end(), right.edges.begin(), right.edges.end());
 
@@ -41,21 +42,21 @@ NFAUnit createUnion(const NFAUnit& left, const NFAUnit& right) {
 }
 
 // 优化：连接操作不引入新节点，而是合并节点
-// 参考 reference 代码中的 act_join
 NFAUnit createConcat(const NFAUnit& left, const NFAUnit& right) {
-    NFAUnit result = left; // 从左侧开始
+    NFAUnit result = left; // 浅拷贝，持有左侧的边引用
     
-    // 我们需要将 right 中的所有边加入 result
-    // 但是，right 中所有从 right.start 出发的边，现在应该从 left.end 出发
-    // 实际上就是把 right.start 这个节点替换为 left.end
+    // 策略：我们要“融合” left.end 和 right.start。
+    // 简单做法：遍历 right 的所有边，如果边的起点是 right.start，将其改为 left.end。
+    // 智能指针优势：我们只需要修改指针指向，不需要移动内存。
     
     std::vector<Edge> rightEdges = right.edges;
     for (auto& edge : rightEdges) {
-        if (edge.startName.nodeName == right.start.nodeName) {
-            edge.startName = left.end;
+        // 比较指针地址是否相同，或者比较名字
+        if (edge.startName == right.start) { 
+            edge.startName = left.end; // 让 right 的边从 left 的终点出发
         }
-        if (edge.endName.nodeName == right.start.nodeName) {
-            edge.endName = left.end;
+        if (edge.endName == right.start) {
+            edge.endName = left.end;   // 如果有自环或指向 start 的边，也修正
         }
     }
     
@@ -109,7 +110,6 @@ NFAUnit regexToNFA(const std::vector<std::string>& postfix) {
             auto top = stk.top(); stk.pop();
             stk.push(createStar(top));
         } else {
-            // Literal symbol (including char sets like "[a-z]")
             stk.push(createBasicElement(token));
         }
     }

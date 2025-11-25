@@ -34,8 +34,8 @@ int main() {
         std::vector<DFATransition> dfaTransitions;
         buildDFAFromNFA(nfa, dfaStates, dfaTransitions);
 
-        // Step 7: 标记接受状态
-        std::string originalNFAEnd = nfa.end.nodeName;
+        // Step 7: 标记接受状态 (修改为指针访问)
+        std::string originalNFAEnd = nfa.end->nodeName;
 
         // Step 8: 可视化 DFA
         displayDFA(dfaStates, dfaTransitions, originalNFAEnd);

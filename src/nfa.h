@@ -4,21 +4,26 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <memory>
 
 // ==============================
 // 基础结构定义
 // ==============================
 
-struct Node {
+// 实际存储节点数据的结构体
+struct NodeImpl {
     std::string nodeName;
-    bool operator==(const Node& other) const {
-        return nodeName == other.nodeName;
-    }
+    
+    // 构造函数
+    NodeImpl(std::string name) : nodeName(std::move(name)) {}
 };
 
+// 使用 shared_ptr 管理节点生命周期
+using Node = std::shared_ptr<NodeImpl>;
+
 struct Edge {
-    Node startName;
-    Node endName;
+    Node startName; // 仅仅持有引用
+    Node endName;   // 仅仅持有引用
     std::string tranSymbol; // "" 表示 ε 转移
 };
 

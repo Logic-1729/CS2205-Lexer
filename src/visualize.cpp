@@ -8,14 +8,15 @@
 
 void displayNFA(const NFAUnit& nfa) {
     std::cout << "NFA States:\n";
-    std::cout << "Start: " << nfa.start.nodeName << "\n";
-    std::cout << "End: " << nfa.end.nodeName << "\n\n";
+    std::cout << "Start: " << nfa.start->nodeName << "\n"; // 指针访问
+    std::cout << "End: " << nfa.end->nodeName << "\n\n";   // 指针访问
 
     std::cout << "Transitions:\n";
     for (size_t i = 0; i < nfa.edges.size(); ++i) {
         const Edge& e = nfa.edges[i];
         std::string label = e.tranSymbol.empty() ? "ε" : e.tranSymbol;
-        std::cout << "  " << e.startName.nodeName << " --(" << label << ")--> " << e.endName.nodeName << "\n";
+        // 指针访问
+        std::cout << "  " << e.startName->nodeName << " --(" << label << ")--> " << e.endName->nodeName << "\n";
     }
     std::cout << "End of NFA\n" << std::endl;
 }
@@ -56,13 +57,14 @@ void generateDotFile_NFA(const NFAUnit& nfa, const std::string& filename) {
     file << "digraph NFA {\n";
     file << "  rankdir=LR;\n";
     file << "  node [shape=circle];\n";
-    file << "  " << nfa.end.nodeName << " [shape=doublecircle];\n";
+    file << "  " << nfa.end->nodeName << " [shape=doublecircle];\n"; // 指针访问
     file << "  __start0 [shape=none, label=\"\"];\n";
-    file << "  __start0 -> " << nfa.start.nodeName << ";\n\n";
+    file << "  __start0 -> " << nfa.start->nodeName << ";\n\n"; // 指针访问
 
     for (const Edge& e : nfa.edges) {
         std::string label = e.tranSymbol.empty() ? "ε" : e.tranSymbol;
-        file << "  " << e.startName.nodeName << " -> " << e.endName.nodeName << " [label=\"" << label << "\"];\n";
+        // 指针访问
+        file << "  " << e.startName->nodeName << " -> " << e.endName->nodeName << " [label=\"" << label << "\"];\n";
     }
     file << "}\n";
     file.close();
@@ -83,7 +85,6 @@ void generateDotFile_DFA(const std::vector<DFAState>& dfaStates,
     file << "  rankdir=LR;\n";
     file << "  node [shape=circle];\n";
 
-    // 标记所有接受状态：包含 originalNFAEnd 的 DFA 状态
     for (const auto& state : dfaStates) {
         if (state.nfaStates.find(originalNFAEnd) != state.nfaStates.end()) {
             file << "  " << state.stateName << " [shape=doublecircle];\n";
