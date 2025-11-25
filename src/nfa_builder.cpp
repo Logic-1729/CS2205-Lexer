@@ -23,16 +23,12 @@ NFAUnit createUnion(const NFAUnit& left, const NFAUnit& right) {
     NFAUnit result;
     result.start = createNode();
     result.end = createNode();
-
     result.edges = left.edges;
     result.edges.insert(result.edges.end(), right.edges.begin(), right.edges.end());
-
-    result.edges.push_back({result.start, left.start, CharSet()}); // epsilon
+    result.edges.push_back({result.start, left.start, CharSet()}); 
     result.edges.push_back({result.start, right.start, CharSet()});
-
     result.edges.push_back({left.end, result.end, CharSet()});
     result.edges.push_back({right.end, result.end, CharSet()});
-
     return result;
 }
 
@@ -91,7 +87,7 @@ NFAUnit regexToNFA(const std::vector<Token>& postfix) {
                 auto right = stk.top(); stk.pop();
                 auto left = stk.top(); stk.pop();
                 stk.push(createUnion(left, right));
-            } else if (token.opVal == EXPLICIT_CONCAT_OP) { // 使用全局常量
+            } else if (token.opVal == EXPLICIT_CONCAT_OP) { // 使用全局常量匹配
                 auto right = stk.top(); stk.pop();
                 auto left = stk.top(); stk.pop();
                 stk.push(createConcat(left, right));

@@ -4,43 +4,68 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstdlib> // for system()
 
-int main() {
+int main(int argc, char* argv[]) {
+    std::string outputDir = ".";
+    if (argc > 1) {
+        outputDir = argv[1];
+    }
+
+    // 修复：使用 \"./path\" 格式，防止路径以 - 开头导致 mkdir 报错
+    // 注意：如果 outputDir 已经包含 "./" 前缀（脚本中已处理），这里重复加也没问题
+    std::string mkdirCmd;
+    if (outputDir[0] == '-') {
+        mkdirCmd = "mkdir -p \"./" + outputDir + "\"";
+    } else {
+        mkdirCmd = "mkdir -p \"" + outputDir + "\"";
+    }
+    
+    // 消除未使用返回值的警告
+    if (system(mkdirCmd.c_str()) != 0) {
+        std::cerr << "Warning: Failed to create directory '" << outputDir << "'" << std::endl;
+        // 不退出，尝试继续运行（可能目录已存在或有写入权限）
+    }
+
     std::string regularExpression;
-    std::cout << "请输入正则表达式 (支持字符集如 [abc] 或 [a-z], 操作符: ( ) * | ? +): ";
+    // 读取输入
     if (!(std::cin >> regularExpression)) return 0;
 
     try {
-        // Step 1: 预处理 (返回 vector<Token>)
+        // Step 1: 预处理
         std::vector<Token> tokens = preprocessRegex(regularExpression);
 
-        // Step 2: 插入连接符 (返回 vector<Token>)
+        // Step 2: 插入连接符
         std::vector<Token> tokensWithConcat = insertConcatSymbols(tokens);
 
-        // Step 3: 中缀转后缀 (构造函数接受 vector<Token>)
+        // Step 3: 中缀转后缀
         InfixToPostfix converter(tokensWithConcat);
         converter.convert();
-        // 获取 vector<Token> 类型的后缀表达式
         const std::vector<Token>& postfix = converter.getPostfix();
 
-        // Step 4: 后缀转 NFA (接受 vector<Token>)
+        // Step 4: 后缀转 NFA
         NFAUnit nfa = regexToNFA(postfix);
 
         // Step 5: 可视化 NFA
         displayNFA(nfa);
-        generateDotFile_NFA(nfa, "nfa_graph.dot");
+        // 确保路径连接正确
+        std::string nfaPath = outputDir + "/nfa_graph.dot";
+        generateDotFile_NFA(nfa, nfaPath);
+        std::cout << "Generated: " << nfaPath << std::endl;
 
         // Step 6: NFA 转 DFA
         std::vector<DFAState> dfaStates;
         std::vector<DFATransition> dfaTransitions;
         buildDFAFromNFA(nfa, dfaStates, dfaTransitions);
 
-        // Step 7: 标记接受状态 (使用 ID)
+        // Step 7: 标记接受状态
         int originalNFAEndId = nfa.end->id;
 
         // Step 8: 可视化 DFA
         displayDFA(dfaStates, dfaTransitions, originalNFAEndId);
-        generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEndId, "dfa_graph.dot");
+        std::string dfaPath = outputDir + "/dfa_graph.dot";
+        generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEndId, dfaPath);
+        std::cout << "Generated: " << dfaPath << std::endl;
 
         std::cout << "流程完成！\n";
     

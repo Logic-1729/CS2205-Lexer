@@ -7,16 +7,15 @@ InfixToPostfix::InfixToPostfix(const std::vector<Token>& infix)
     : infix_(infix) {}
 
 int InfixToPostfix::getISP(char op) {
-    // 栈内优先级
     static const std::map<char, int> isp = {
         {'|', 5}, 
-        {'*', 7}, {'?', 7}, {'^', 7}, 
+        {'*', 7}, {'?', 7}, 
         {'(', 1}, {')', 8}, {'#', 0}
     };
     
-    // 使用全局常量判断连接符
+    // 优先级判断使用常量
     if (op == EXPLICIT_CONCAT_OP) return 3; 
-    if (op == '+') return 7; // One or more (unary)
+    if (op == '+') return 7; // 一次或多次 (+) 优先级同 *
     
     auto it = isp.find(op);
     if (it == isp.end()) throw std::runtime_error(std::string("Unknown operator in ISP: ") + op);
@@ -24,16 +23,14 @@ int InfixToPostfix::getISP(char op) {
 }
 
 int InfixToPostfix::getICP(char op) {
-    // 栈外优先级
     static const std::map<char, int> icp = {
         {'|', 4}, 
         {'*', 6}, {'?', 6}, 
         {'(', 8}, {')', 1}, {'#', 0}
     };
     
-    // 使用全局常量判断连接符
     if (op == EXPLICIT_CONCAT_OP) return 2; 
-    if (op == '+') return 6; // One or more
+    if (op == '+') return 6; 
     
     auto it = icp.find(op);
     if (it == icp.end()) throw std::runtime_error(std::string("Unknown operator in ICP: ") + op);
@@ -43,7 +40,7 @@ int InfixToPostfix::getICP(char op) {
 void InfixToPostfix::convert() {
     postfix_.clear();
     std::vector<Token> input = infix_;
-    input.push_back(Token('#')); // End marker
+    input.push_back(Token('#')); 
     std::stack<Token> opStack;
     opStack.push(Token('#'));
 

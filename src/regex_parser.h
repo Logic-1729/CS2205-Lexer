@@ -6,18 +6,21 @@
 #include <variant>
 #include "nfa.h" 
 
-// 全局常量：显式连接符（用于内部表示连接操作，避免与用户输入的 '+' 冲突）
+// ==========================================
+// 全局常量声明
+// ==========================================
+// 显式连接符（用于内部表示连接操作，避免与用户输入的 '+' 冲突）
 extern const char EXPLICIT_CONCAT_OP;
 
-// Token 类型：可以是操作符(char) 或 操作数(CharSet)
+// ==========================================
+// Token 定义
+// ==========================================
 struct Token {
     enum Type { OPERATOR, OPERAND } type;
     char opVal;
     CharSet operandVal;
 
-    // 默认构造函数
     Token() : type(OPERATOR), opVal(0) {}
-    
     Token(char op) : type(OPERATOR), opVal(op) {}
     Token(CharSet cs) : type(OPERAND), operandVal(cs) {}
     
@@ -26,7 +29,7 @@ struct Token {
 };
 
 // ==============================
-// 正则表达式预处理与解析
+// 函数声明
 // ==============================
 
 std::vector<Token> preprocessRegex(const std::string& re);

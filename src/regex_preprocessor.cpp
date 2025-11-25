@@ -4,7 +4,10 @@
 #include <stdexcept>
 #include <algorithm>
 
-// 定义全局常量：内部使用的显式连接符
+// ==========================================
+// 全局常量定义
+// ==========================================
+// 使用 '&' 作为内部连接符，避免与 '+' (一次或多次) 冲突
 const char EXPLICIT_CONCAT_OP = '&';
 
 // 解析 [...] 内容为 CharSet
@@ -31,16 +34,12 @@ std::vector<Token> preprocessRegex(const std::string& re) {
         char c = re[i];
         
         if (c == '[') {
-            // 解析字符集
             std::string content;
             int j = i + 1;
-            bool escape = false;
-            while (j < n) {
-                if (re[j] == ']' && !escape) break;
+            while (j < n && re[j] != ']') {
                 content += re[j];
                 j++;
             }
-            
             if (j < n) {
                 tokens.push_back(Token(parseCharSet(content)));
                 i = j; 
@@ -50,7 +49,6 @@ std::vector<Token> preprocessRegex(const std::string& re) {
         } else if (c == '(' || c == ')' || c == '*' || c == '|' || c == '?' || c == '+') {
             tokens.push_back(Token(c));
         } else {
-            // 普通字符
             tokens.push_back(Token(CharSet(c)));
         }
     }
@@ -72,7 +70,6 @@ std::vector<Token> insertConcatSymbols(const std::vector<Token>& tokens) {
         // 规则：
         // 1. Operand 后面接 Operand 或 '('
         // 2. ) * ? + 后面接 Operand 或 '('
-        
         bool prevIsUnarySuffix = (prev.isOperator() && (prev.opVal == '*' || prev.opVal == '?' || prev.opVal == '+'));
         bool prevIsCloseParen = (prev.isOperator() && prev.opVal == ')');
         bool prevIsOperand = prev.isOperand();
@@ -86,7 +83,7 @@ std::vector<Token> insertConcatSymbols(const std::vector<Token>& tokens) {
         }
 
         if (needConcat) {
-            // 使用全局定义的连接符
+            // 使用全局常量
             result.push_back(Token(EXPLICIT_CONCAT_OP)); 
         }
         result.push_back(curr);
