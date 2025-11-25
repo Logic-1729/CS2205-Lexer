@@ -3,17 +3,21 @@
 # 确保脚本抛出错误时停止执行
 set -e
 
-echo "=== 正在编译 Regex Automata 项目 ==="
+echo "=== 正在构建 Regex Automata 项目 ==="
 
-# 编译命令
-g++ -std=c++17 -O2 \
-    src/main.cpp \
-    src/regex_preprocessor.cpp \
-    src/infix_to_postfix.cpp \
-    src/nfa_builder.cpp \
-    src/dfa_converter.cpp \
-    src/visualize.cpp \
-    -o regex_automata
+# 创建构建目录
+mkdir -p build
+cd build
+
+# 运行 CMake 配置
+cmake ..
+
+# 编译项目
+cmake --build .
+
+# 将生成的可执行文件复制到根目录（方便后续逻辑调用）
+cp regex_automata ..
+cd ..
 
 echo "=== 编译成功！==="
 echo "生成的执行文件为: ./regex_automata"
@@ -38,25 +42,19 @@ do
     read -p "请输入正则表达式: " regex_input
     
     # 2. 设置文件夹名
-    # 只替换斜杠 /，因为它是路径分隔符，无法作为文件名的一部分
-    # 其他字符如 | * ? 等在加引号的情况下通常是可以创建目录的
     folder_name=$(echo "$regex_input" | sed 's/\//_/g')
     
-    # 防止文件夹名为空
     if [ -z "$folder_name" ]; then
         folder_name="regex_task_$i"
     fi
     
     echo "创建输出目录: $folder_name"
-    # 关键：必须使用引号 "$folder_name" 来处理包含特殊字符的名称
     mkdir -p "./$folder_name"
     
     # 运行 C++ 程序
-    # 必须使用引号传递路径参数
     echo "$regex_input" | ./regex_automata "./$folder_name"
     
-    # 3. 生成图片到该文件夹
-    # 注意：所有的路径变量都加上了引号
+    # 3. 生成图片
     echo "正在生成可视化图片..."
     if command -v dot &> /dev/null; then
         if [ -f "./$folder_name/nfa_graph.dot" ]; then

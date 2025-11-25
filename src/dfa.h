@@ -1,5 +1,4 @@
-#ifndef DFA_H
-#define DFA_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -49,5 +48,3 @@ void generateDotFile_DFA(const std::vector<DFAState>& dfaStates,
                          const std::vector<DFATransition>& dfaTransitions,
                          int originalNFAEndId,
                          const std::string& filename = "dfa.dot");
-
-#endif // DFA_H

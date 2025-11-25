@@ -1,5 +1,4 @@
-#ifndef NFA_H
-#define NFA_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -122,5 +121,3 @@ NFAUnit createPlus(const NFAUnit& unit);     // + (1 or more)
 
 void displayNFA(const NFAUnit& nfa);
 void generateDotFile_NFA(const NFAUnit& nfa, const std::string& filename = "nfa.dot");
-
-#endif // NFA_H

@@ -1,5 +1,4 @@
-#ifndef REGEX_PARSER_H
-#define REGEX_PARSER_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -67,5 +66,3 @@ private:
 };
 
 NFAUnit regexToNFA(const std::vector<Token>& postfix);
-
-#endif // REGEX_PARSER_H
