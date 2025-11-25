@@ -105,12 +105,10 @@ void buildDFAFromNFA(const NFAUnit& nfa,
 // 输出与可视化
 // ==============================
 
-// 修正：增加 originalNFAEnd 参数以匹配 visualize.cpp 实现
 void displayDFA(const std::vector<DFAState>& dfaStates,
                 const std::vector<DFATransition>& dfaTransitions,
                 const std::string& originalNFAEnd);
 
-// 修正：增加 originalNFAEnd 参数以匹配 visualize.cpp 实现
 void generateDotFile_DFA(const std::vector<DFAState>& dfaStates,
                          const std::vector<DFATransition>& dfaTransitions,
                          const std::string& originalNFAEnd,

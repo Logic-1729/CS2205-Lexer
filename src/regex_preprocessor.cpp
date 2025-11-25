@@ -4,20 +4,21 @@
 #include <stdexcept>
 #include <algorithm>
 
-// 判断是否为普通字符（操作数）
+// 判断是否为操作数（字母、数字、字符集等）
 bool isLetter(const std::string& s) {
     if (s.empty()) return false;
     
-    // 如果是单个字符，只要不是保留的操作符，就是字母
+    // 如果是单个字符，只要不是保留的操作符，就是操作数
     if (s.length() == 1) {
         char c = s[0];
         return c != '(' && c != ')' && c != '*' && c != '|' && c != '+' && c != '#';
     }
-    // 如果长度大于1（例如转义字符或特殊标记），视为字母
+    
+    // 如果是多个字符（例如 [a-z] 或转义字符），直接视为操作数
     return true; 
 }
 
-// 预处理：处理字符集 [a-z] 等
+// 预处理：将 [a-z] 等视为单个 Token，不展开
 std::vector<std::string> preprocessRegex(const std::string& re) {
     std::vector<std::string> tokens;
     int n = re.size();
@@ -25,8 +26,8 @@ std::vector<std::string> preprocessRegex(const std::string& re) {
         if (re[i] != '[') {
             tokens.push_back(std::string(1, re[i]));
         } else {
-            // 处理 [ ... ]
-            std::string charsetContent;
+            // 处理 [ ... ]，将其整体提取作为一个 Token
+            std::string charsetContent = "[";
             int j = i + 1;
             while (j < n && re[j] != ']') {
                 charsetContent += re[j];
@@ -34,40 +35,8 @@ std::vector<std::string> preprocessRegex(const std::string& re) {
             }
             
             if (j < n) {
-                if (!charsetContent.empty()) {
-                    tokens.push_back("(");
-                    
-                    // 解析字符集内部，处理 a-z 这种范围
-                    std::vector<std::string> expandedChars;
-                    for (size_t k = 0; k < charsetContent.length(); ++k) {
-                        // 检查是否是范围格式: char - char
-                        // 确保 '-' 前后都有字符，且不是第一个或最后一个
-                        if (k + 2 < charsetContent.length() && charsetContent[k+1] == '-') {
-                            char start = charsetContent[k];
-                            char end = charsetContent[k+2];
-                            
-                            // 简单的 ASCII 范围展开
-                            if (start <= end) {
-                                for (char c = start; c <= end; ++c) {
-                                    expandedChars.push_back(std::string(1, c));
-                                }
-                            }
-                            k += 2; // 跳过 '-' 和 'end'
-                        } else {
-                            expandedChars.push_back(std::string(1, charsetContent[k]));
-                        }
-                    }
-
-                    // 将展开后的字符用 '|' 连接
-                    for (size_t k = 0; k < expandedChars.size(); ++k) {
-                        tokens.push_back(expandedChars[k]);
-                        if (k < expandedChars.size() - 1) {
-                            tokens.push_back("|");
-                        }
-                    }
-                    
-                    tokens.push_back(")");
-                }
+                charsetContent += "]";
+                tokens.push_back(charsetContent);
                 i = j; // 跳过 ']'
             } else {
                 throw std::runtime_error("Unmatched '[' in regex");

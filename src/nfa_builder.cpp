@@ -1,7 +1,8 @@
 #include "nfa_dfa_builder.h"
 #include <memory>
+#include <algorithm>
 
-// 全局节点计数器（线程不安全，仅用于演示）
+// 全局节点计数器
 static int globalNodeCounter = 0;
 
 Node createNode() {
@@ -12,6 +13,7 @@ NFAUnit createBasicElement(const std::string& symbol) {
     NFAUnit unit;
     unit.start = createNode();
     unit.end = createNode();
+    // 创建一条边 start -> end
     unit.edges.push_back({unit.start, unit.end, symbol});
     return unit;
 }
@@ -21,30 +23,45 @@ NFAUnit createUnion(const NFAUnit& left, const NFAUnit& right) {
     result.start = createNode();
     result.end = createNode();
 
-    // Add all edges from left and right
+    // 复制所有边
     result.edges = left.edges;
     result.edges.insert(result.edges.end(), right.edges.begin(), right.edges.end());
 
-    // ε-transitions
+    // 新起点通过 ε 到达 left 和 right 的起点
     result.edges.push_back({result.start, left.start, ""});
     result.edges.push_back({result.start, right.start, ""});
+
+    // left 和 right 的终点通过 ε 到达新终点
     result.edges.push_back({left.end, result.end, ""});
     result.edges.push_back({right.end, result.end, ""});
 
     return result;
 }
 
+// 优化：连接操作不引入新节点，而是合并节点
+// 参考 reference 代码中的 act_join
 NFAUnit createConcat(const NFAUnit& left, const NFAUnit& right) {
-    NFAUnit result;
-    result.start = left.start;
+    NFAUnit result = left; // 从左侧开始
+    
+    // 我们需要将 right 中的所有边加入 result
+    // 但是，right 中所有从 right.start 出发的边，现在应该从 left.end 出发
+    // 实际上就是把 right.start 这个节点替换为 left.end
+    
+    std::vector<Edge> rightEdges = right.edges;
+    for (auto& edge : rightEdges) {
+        if (edge.startName.nodeName == right.start.nodeName) {
+            edge.startName = left.end;
+        }
+        if (edge.endName.nodeName == right.start.nodeName) {
+            edge.endName = left.end;
+        }
+    }
+    
+    // 将调整后的 right 边加入 result
+    result.edges.insert(result.edges.end(), rightEdges.begin(), rightEdges.end());
+    
+    // 新的终点是 right 的终点
     result.end = right.end;
-
-    // Merge edges
-    result.edges = left.edges;
-    result.edges.insert(result.edges.end(), right.edges.begin(), right.edges.end());
-
-    // Connect left.end -> right.start with ε
-    result.edges.push_back({left.end, right.start, ""});
 
     return result;
 }
@@ -56,14 +73,17 @@ NFAUnit createStar(const NFAUnit& unit) {
 
     result.edges = unit.edges;
 
-    // ε from new start to new end (for ε)
-    result.edges.push_back({result.start, result.end, ""});
     // ε from new start to unit start
     result.edges.push_back({result.start, unit.start, ""});
-    // ε from unit end to unit start (loop)
-    result.edges.push_back({unit.end, unit.start, ""});
+    
     // ε from unit end to new end
     result.edges.push_back({unit.end, result.end, ""});
+    
+    // ε from unit end to unit start (loop)
+    result.edges.push_back({unit.end, unit.start, ""});
+    
+    // ε from new start to new end (skip, 匹配空串)
+    result.edges.push_back({result.start, result.end, ""});
 
     return result;
 }
@@ -87,7 +107,7 @@ NFAUnit regexToNFA(const std::vector<std::string>& postfix) {
             auto top = stk.top(); stk.pop();
             stk.push(createStar(top));
         } else {
-            // Literal symbol (including char sets like "abc")
+            // Literal symbol (including char sets like "[a-z]")
             stk.push(createBasicElement(token));
         }
     }

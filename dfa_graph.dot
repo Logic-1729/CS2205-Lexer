@@ -1,15 +1,16 @@
 digraph DFA {
   rankdir=LR;
   node [shape=circle];
-  q0q2q4q6q7 [shape=doublecircle];
-  q0q1q2q4q5q7 [shape=doublecircle];
-  q0q2q3q4q5q7 [shape=doublecircle];
+  q11q5q7q8 [shape=doublecircle];
+  q11q8q9 [shape=doublecircle];
+  q11q3q7q8 [shape=doublecircle];
   __start0 [shape=none, label=""];
-  __start0 -> q0q2q4q6q7;
+  __start0 -> q0q4q6;
 
-  q0q2q4q6q7 -> q0q1q2q4q5q7 [label="a"];
-  q0q1q2q4q5q7 -> q0q1q2q4q5q7 [label="a"];
-  q0q1q2q4q5q7 -> q0q2q3q4q5q7 [label="b"];
-  q0q2q3q4q5q7 -> q0q1q2q4q5q7 [label="a"];
-  q0q2q3q4q5q7 -> q0q2q3q4q5q7 [label="b"];
+  q0q4q6 -> q11q5q7q8 [label="[_a-zA-Z]"];
+  q0q4q6 -> q1 [label="i"];
+  q11q5q7q8 -> q11q8q9 [label="[_0-9a-zA-Z]"];
+  q1 -> q11q3q7q8 [label="f"];
+  q11q8q9 -> q11q8q9 [label="[_0-9a-zA-Z]"];
+  q11q3q7q8 -> q11q8q9 [label="[_0-9a-zA-Z]"];
 }
