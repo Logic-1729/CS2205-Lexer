@@ -1,6 +1,5 @@
-// visualize.cpp
-
-#include "nfa_dfa_builder.h"
+#include "nfa.h"
+#include "dfa.h"
 #include <fstream>
 #include <iostream>
 #include <set>

@@ -1,4 +1,4 @@
-#include "nfa_dfa_builder.h"
+#include "dfa.h"
 #include <queue>
 #include <algorithm>
 

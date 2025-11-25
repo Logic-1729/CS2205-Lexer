@@ -1,4 +1,4 @@
-#include "nfa_dfa_builder.h"
+#include "regex_parser.h"
 #include <map>
 #include <stack>
 #include <stdexcept>

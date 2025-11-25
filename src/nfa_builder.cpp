@@ -1,4 +1,6 @@
-#include "nfa_dfa_builder.h"
+#include "nfa.h"
+#include "regex_parser.h"
+#include <stack>
 #include <memory>
 #include <algorithm>
 
