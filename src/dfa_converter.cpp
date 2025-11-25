@@ -1,6 +1,7 @@
 #include "dfa.h"
 #include <queue>
 #include <algorithm>
+#include <map>
 
 // Helper: get all states reachable via ε from a set
 std::set<std::string> getEpsilonClosure(const std::set<std::string>& states, const NFAUnit& nfa) {
@@ -25,11 +26,9 @@ DFAState epsilonClosure(const std::set<std::string>& states, const NFAUnit& nfa)
     auto closureSet = getEpsilonClosure(states, nfa);
     DFAState state;
     state.nfaStates = closureSet;
-    // 排序以保证命名一致性（虽然 set 已经有序，但为了保险）
+    // Sort to ensure naming consistency (although set is already ordered)
     for (const auto& s : closureSet) {
         state.stateName += s;
-        // 为了避免名字过长，可以考虑加分隔符，或者仅在显示时处理
-        // 这里保持原样以匹配你的逻辑
     }
     return state;
 }
@@ -51,15 +50,7 @@ DFAState move(const DFAState& state, const std::string& symbol, const NFAUnit& n
     return nextState;
 }
 
-bool isDFAStateInVector(const std::vector<DFAState>& dfaStates, const DFAState& target) {
-    for (const auto& state : dfaStates) {
-        if (state.nfaStates == target.nfaStates) {
-            return true;
-        }
-    }
-    return false;
-}
-
+// Helper to check if a transition already exists to avoid duplicates
 bool isTransitionInVector(const DFAState& from, const DFAState& to,
                           const std::string& symbol,
                           const std::vector<DFATransition>& transitions) {
@@ -76,15 +67,21 @@ bool isTransitionInVector(const DFAState& from, const DFAState& to,
 void buildDFAFromNFA(const NFAUnit& nfa,
                      std::vector<DFAState>& dfaStates,
                      std::vector<DFATransition>& dfaTransitions) {
+    // Map to quickly lookup if a set of NFA states has already been processed into a DFA state.
+    // Key: Set of NFA state names
+    // Value: Index in dfaStates vector
+    std::map<std::set<std::string>, int> existingStates;
+
     // Get initial state
     std::set<std::string> initSet = {nfa.start.nodeName};
     DFAState initState = epsilonClosure(initSet, nfa);
+    
     dfaStates.push_back(initState);
+    existingStates[initState.nfaStates] = 0;
 
-    // Use index-based loop
+    // Use index-based loop since dfaStates grows during iteration
     for (size_t i = 0; i < dfaStates.size(); ++i) {
-        // CRITICAL FIX: Use Copy instead of Reference
-        // std::vector::push_back may reallocate memory, invalidating references/pointers.
+        // Use Copy instead of Reference to avoid invalidation when vector reallocates
         DFAState current = dfaStates[i]; 
 
         // Collect all possible input symbols (non-ε)
@@ -97,15 +94,22 @@ void buildDFAFromNFA(const NFAUnit& nfa,
 
         for (const std::string& symbol : symbols) {
             DFAState moved = move(current, symbol, nfa); // Use the copy 'current'
+            
             if (!moved.nfaStates.empty()) {
                 DFAState closure = epsilonClosure(moved.nfaStates, nfa);
 
-                if (!isDFAStateInVector(dfaStates, closure)) {
-                    dfaStates.push_back(closure); // This might cause reallocation
+                // OPTIMIZATION: O(log N) lookup instead of O(N) linear scan
+                if (existingStates.find(closure.nfaStates) == existingStates.end()) {
+                    int newIndex = static_cast<int>(dfaStates.size());
+                    dfaStates.push_back(closure);
+                    existingStates[closure.nfaStates] = newIndex;
                 }
 
-                // Need to find the actual state in dfaStates to ensure consistency if needed,
-                // but for transition recording, copies are fine since we rely on value semantics.
+                // Note: We might be pointing to a 'closure' object that is a copy, 
+                // but its content (nfaStates) is what identifies it.
+                // Ideally, we could grab the reference from dfaStates using the index if we wanted 
+                // exact pointer equality, but our structures use value semantics.
+
                 if (!isTransitionInVector(current, closure, symbol, dfaTransitions)) {
                     dfaTransitions.push_back({current, closure, symbol});
                 }
