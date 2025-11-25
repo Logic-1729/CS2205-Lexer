@@ -1,95 +1,115 @@
 #include "nfa_dfa_builder.h"
-#include <cctype>
-#include <iostream>
-#include <stdexcept>
+#include <queue>
+#include <algorithm>
 
-bool isLetter(const std::string& s) {
-    if (s.empty()) return false;
-    // 如果是预处理生成的单个字符，通常长度为1
-    if (s.length() == 1) {
-        char ch = s[0];
-        return ( (ch >= 'a' && ch <= 'z') ||
-                 (ch >= 'A' && ch <= 'Z') ||
-                 (ch >= '0' && ch <= '9') ||
-                 ch == '_' || ch == '-' );
-    }
-    // 兼容旧逻辑，允许多字符作为单一token（如未拆分的字符串）
-    for (char ch : s) {
-        if (!( (ch >= 'a' && ch <= 'z') ||
-               (ch >= 'A' && ch <= 'Z') ||
-               (ch >= '0' && ch <= '9') ||
-               ch == '_' || ch == '-' )) {
-            return false;
-        }
-    }
-    return true;
-}
+// Helper: get all states reachable via ε from a set
+std::set<std::string> getEpsilonClosure(const std::set<std::string>& states, const NFAUnit& nfa) {
+    std::set<std::string> closure = states;
+    std::queue<std::string> q;
+    for (const auto& s : states) q.push(s);
 
-std::vector<std::string> preprocessRegex(const std::string& re) {
-    std::vector<std::string> tokens;
-    int n = re.size();
-    for (int i = 0; i < n; ++i) {
-        if (re[i] != '[') {
-            tokens.push_back(std::string(1, re[i]));
-        } else {
-            // 处理 [abc] -> (a|b|c)
-            std::string charsetContent;
-            int j = i + 1;
-            while (j < n && re[j] != ']') {
-                charsetContent += re[j];
-                j++;
-            }
-            
-            if (j < n) {
-                // 找到了闭合的 ]
-                if (!charsetContent.empty()) {
-                    tokens.push_back("(");
-                    for (size_t k = 0; k < charsetContent.length(); ++k) {
-                        tokens.push_back(std::string(1, charsetContent[k]));
-                        if (k < charsetContent.length() - 1) {
-                            tokens.push_back("|");
-                        }
-                    }
-                    tokens.push_back(")");
+    while (!q.empty()) {
+        std::string current = q.front(); q.pop();
+        for (const Edge& e : nfa.edges) {
+            if (e.startName.nodeName == current && e.tranSymbol.empty()) { // ε-edge
+                if (closure.insert(e.endName.nodeName).second) {
+                    q.push(e.endName.nodeName);
                 }
-                i = j; // skip ']'
-            } else {
-                throw std::runtime_error("Unmatched '[' in regex");
             }
         }
     }
-    return tokens;
+    return closure;
 }
 
-std::vector<std::string> insertConcatSymbols(const std::vector<std::string>& tokens) {
-    if (tokens.empty()) return {};
-
-    std::vector<std::string> result;
-    result.push_back(tokens[0]);
-
-    for (size_t i = 1; i < tokens.size(); ++i) {
-        const std::string& prev = tokens[i - 1];
-        const std::string& curr = tokens[i];
-
-        bool needConcat = false;
-
-        // 1. prev 是字母/字符集 且 curr 是字母/字符集 或 '('
-        if (isLetter(prev) && (isLetter(curr) || curr == "(")) {
-            needConcat = true;
-        }
-        // 2. prev 是 ')' 且 curr 是字母/字符集 或 '('
-        if (prev == ")" && (isLetter(curr) || curr == "(")) {
-            needConcat = true;
-        }
-        // 3. prev 是 '*' 且 curr 是字母/字符集 或 '('
-        if (prev == "*" && (isLetter(curr) || curr == "(")) {
-            needConcat = true;
-        }
-
-        if (needConcat) {
-            result.push_back("+");
-        }
-        result.push_back(curr);
+DFAState epsilonClosure(const std::set<std::string>& states, const NFAUnit& nfa) {
+    auto closureSet = getEpsilonClosure(states, nfa);
+    DFAState state;
+    state.nfaStates = closureSet;
+    // 排序以保证命名一致性（虽然 set 已经有序，但为了保险）
+    for (const auto& s : closureSet) {
+        state.stateName += s;
+        // 为了避免名字过长，可以考虑加分隔符，或者仅在显示时处理
+        // 这里保持原样以匹配你的逻辑
     }
-    return result;
+    return state;
+}
+
+DFAState move(const DFAState& state, const std::string& symbol, const NFAUnit& nfa) {
+    std::set<std::string> targetStates;
+    for (const std::string& nfaState : state.nfaStates) {
+        for (const Edge& e : nfa.edges) {
+            if (e.startName.nodeName == nfaState && e.tranSymbol == symbol) {
+                targetStates.insert(e.endName.nodeName);
+            }
+        }
+    }
+    DFAState nextState;
+    nextState.nfaStates = targetStates;
+    for (const auto& s : targetStates) {
+        nextState.stateName += s;
+    }
+    return nextState;
+}
+
+bool isDFAStateInVector(const std::vector<DFAState>& dfaStates, const DFAState& target) {
+    for (const auto& state : dfaStates) {
+        if (state.nfaStates == target.nfaStates) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool isTransitionInVector(const DFAState& from, const DFAState& to,
+                          const std::string& symbol,
+                          const std::vector<DFATransition>& transitions) {
+    for (const auto& t : transitions) {
+        if (t.fromState.nfaStates == from.nfaStates &&
+            t.toState.nfaStates == to.nfaStates &&
+            t.transitionSymbol == symbol) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void buildDFAFromNFA(const NFAUnit& nfa,
+                     std::vector<DFAState>& dfaStates,
+                     std::vector<DFATransition>& dfaTransitions) {
+    // Get initial state
+    std::set<std::string> initSet = {nfa.start.nodeName};
+    DFAState initState = epsilonClosure(initSet, nfa);
+    dfaStates.push_back(initState);
+
+    // Use index-based loop
+    for (size_t i = 0; i < dfaStates.size(); ++i) {
+        // CRITICAL FIX: Use Copy instead of Reference
+        // std::vector::push_back may reallocate memory, invalidating references/pointers.
+        DFAState current = dfaStates[i]; 
+
+        // Collect all possible input symbols (non-ε)
+        std::set<std::string> symbols;
+        for (const Edge& e : nfa.edges) {
+            if (!e.tranSymbol.empty()) {
+                symbols.insert(e.tranSymbol);
+            }
+        }
+
+        for (const std::string& symbol : symbols) {
+            DFAState moved = move(current, symbol, nfa); // Use the copy 'current'
+            if (!moved.nfaStates.empty()) {
+                DFAState closure = epsilonClosure(moved.nfaStates, nfa);
+
+                if (!isDFAStateInVector(dfaStates, closure)) {
+                    dfaStates.push_back(closure); // This might cause reallocation
+                }
+
+                // Need to find the actual state in dfaStates to ensure consistency if needed,
+                // but for transition recording, copies are fine since we rely on value semantics.
+                if (!isTransitionInVector(current, closure, symbol, dfaTransitions)) {
+                    dfaTransitions.push_back({current, closure, symbol});
+                }
+            }
+        }
+    }
 }
