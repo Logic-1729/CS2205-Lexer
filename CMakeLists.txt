@@ -15,11 +15,9 @@ set(SOURCES
     src/infix_to_postfix.cpp
     src/nfa_builder.cpp
     src/dfa_converter.cpp
+    src/dfa_minimizer.cpp  # 新增
     src/visualize.cpp
 )
 
 # 创建可执行文件
 add_executable(regex_automata ${SOURCES})
-
-# (可选) 如果未来需要链接其他库，使用 target_link_libraries
-# target_link_libraries(regex_automata PRIVATE ...)

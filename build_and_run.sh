@@ -15,7 +15,7 @@ cmake ..
 # 编译项目
 cmake --build .
 
-# 将生成的可执行文件复制到根目录（方便后续逻辑调用）
+# 将生成的可执行文件复制到根目录
 cp regex_automata ..
 cd ..
 
@@ -57,14 +57,22 @@ do
     # 3. 生成图片
     echo "正在生成可视化图片..."
     if command -v dot &> /dev/null; then
+        # NFA
         if [ -f "./$folder_name/nfa_graph.dot" ]; then
             dot -Tpng "./$folder_name/nfa_graph.dot" -o "./$folder_name/nfa.png"
             echo "  -> 生成: ./$folder_name/nfa.png"
         fi
 
+        # Original DFA
         if [ -f "./$folder_name/dfa_graph.dot" ]; then
             dot -Tpng "./$folder_name/dfa_graph.dot" -o "./$folder_name/dfa.png"
             echo "  -> 生成: ./$folder_name/dfa.png"
+        fi
+
+        # Minimized DFA (新增)
+        if [ -f "./$folder_name/min_dfa_graph.dot" ]; then
+            dot -Tpng "./$folder_name/min_dfa_graph.dot" -o "./$folder_name/min_dfa.png"
+            echo "  -> 生成: ./$folder_name/min_dfa.png"
         fi
     else
         echo "警告: 未找到 'dot' 命令，无法生成 PNG 图片。"

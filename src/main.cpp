@@ -42,26 +42,38 @@ int main(int argc, char* argv[]) {
         NFAUnit nfa = regexToNFA(postfix);
 
         // Step 5: 可视化 NFA
+        std::cout << "\n=== NFA ===" << std::endl;
         displayNFA(nfa);
         std::string nfaPath = outputDir + "/nfa_graph.dot";
         generateDotFile_NFA(nfa, nfaPath);
         std::cout << "Generated: " << nfaPath << std::endl;
 
-        // Step 6: NFA 转 DFA
+        // Step 6: NFA 转 DFA (原始)
         std::vector<DFAState> dfaStates;
         std::vector<DFATransition> dfaTransitions;
         buildDFAFromNFA(nfa, dfaStates, dfaTransitions);
-
-        // Step 7: 标记接受状态
         int originalNFAEndId = nfa.end->id;
 
-        // Step 8: 可视化 DFA
+        // Step 7: 可视化 原始 DFA
+        std::cout << "\n=== Original DFA ===" << std::endl;
         displayDFA(dfaStates, dfaTransitions, originalNFAEndId);
         std::string dfaPath = outputDir + "/dfa_graph.dot";
         generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEndId, dfaPath);
         std::cout << "Generated: " << dfaPath << std::endl;
 
-        std::cout << "流程完成！\n";
+        // Step 8: DFA 最小化
+        std::vector<DFAState> minDfaStates;
+        std::vector<DFATransition> minDfaTransitions;
+        minimizeDFA(dfaStates, dfaTransitions, originalNFAEndId, minDfaStates, minDfaTransitions);
+
+        // Step 9: 可视化 最小化 DFA
+        std::cout << "\n=== Minimized DFA ===" << std::endl;
+        displayDFA(minDfaStates, minDfaTransitions, originalNFAEndId);
+        std::string minDfaPath = outputDir + "/min_dfa_graph.dot";
+        generateDotFile_DFA(minDfaStates, minDfaTransitions, originalNFAEndId, minDfaPath);
+        std::cout << "Generated: " << minDfaPath << std::endl;
+
+        std::cout << "\nProcess Complete!\n";
     
     } catch (const RegexSyntaxError& e) {
         std::cerr << "\n[Syntax Error]: Failed to parse regex.\n";

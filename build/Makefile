@@ -153,6 +153,30 @@ src/dfa_converter.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/regex_automata.dir/build.make CMakeFiles/regex_automata.dir/src/dfa_converter.cpp.s
 .PHONY : src/dfa_converter.cpp.s
 
+src/dfa_minimizer.o: src/dfa_minimizer.cpp.o
+.PHONY : src/dfa_minimizer.o
+
+# target to build an object file
+src/dfa_minimizer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/regex_automata.dir/build.make CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o
+.PHONY : src/dfa_minimizer.cpp.o
+
+src/dfa_minimizer.i: src/dfa_minimizer.cpp.i
+.PHONY : src/dfa_minimizer.i
+
+# target to preprocess a source file
+src/dfa_minimizer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/regex_automata.dir/build.make CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.i
+.PHONY : src/dfa_minimizer.cpp.i
+
+src/dfa_minimizer.s: src/dfa_minimizer.cpp.s
+.PHONY : src/dfa_minimizer.s
+
+# target to generate assembly for a file
+src/dfa_minimizer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/regex_automata.dir/build.make CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.s
+.PHONY : src/dfa_minimizer.cpp.s
+
 src/infix_to_postfix.o: src/infix_to_postfix.cpp.o
 .PHONY : src/infix_to_postfix.o
 
@@ -285,6 +309,9 @@ help:
 	@echo "... src/dfa_converter.o"
 	@echo "... src/dfa_converter.i"
 	@echo "... src/dfa_converter.s"
+	@echo "... src/dfa_minimizer.o"
+	@echo "... src/dfa_minimizer.i"
+	@echo "... src/dfa_minimizer.s"
 	@echo "... src/infix_to_postfix.o"
 	@echo "... src/infix_to_postfix.i"
 	@echo "... src/infix_to_postfix.s"

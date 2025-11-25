@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/regex_automata.dir/src/dfa_converter.cpp.o"
   "CMakeFiles/regex_automata.dir/src/dfa_converter.cpp.o.d"
+  "CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o"
+  "CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o.d"
   "CMakeFiles/regex_automata.dir/src/infix_to_postfix.cpp.o"
   "CMakeFiles/regex_automata.dir/src/infix_to_postfix.cpp.o.d"
   "CMakeFiles/regex_automata.dir/src/main.cpp.o"

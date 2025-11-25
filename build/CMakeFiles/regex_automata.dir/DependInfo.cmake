@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/logic/DFA/src/dfa_converter.cpp" "CMakeFiles/regex_automata.dir/src/dfa_converter.cpp.o" "gcc" "CMakeFiles/regex_automata.dir/src/dfa_converter.cpp.o.d"
+  "/home/logic/DFA/src/dfa_minimizer.cpp" "CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o" "gcc" "CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o.d"
   "/home/logic/DFA/src/infix_to_postfix.cpp" "CMakeFiles/regex_automata.dir/src/infix_to_postfix.cpp.o" "gcc" "CMakeFiles/regex_automata.dir/src/infix_to_postfix.cpp.o.d"
   "/home/logic/DFA/src/main.cpp" "CMakeFiles/regex_automata.dir/src/main.cpp.o" "gcc" "CMakeFiles/regex_automata.dir/src/main.cpp.o.d"
   "/home/logic/DFA/src/nfa_builder.cpp" "CMakeFiles/regex_automata.dir/src/nfa_builder.cpp.o" "gcc" "CMakeFiles/regex_automata.dir/src/nfa_builder.cpp.o.d"
