@@ -70,8 +70,6 @@
 #             f.write(case + "\n")
 #     print(f"✅ 已生成 {total} 条测试用例到 tests/test_cases1.txt")
 
-# 命令行中输入 python3 gen_testcases.py 即可生成 total 个测试样例至 tests 文件夹下的 test_cases 文件里
-
 
 # Generate true regex without MATCH and NO_MATCH
 import os
