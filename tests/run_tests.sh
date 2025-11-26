@@ -1,13 +1,12 @@
 #!/bin/bash
 # 自动化测试 Regex Automata 项目
 
-EXEC=./regex_automata
-TEST_DIR=tests
-mkdir -p $TEST_DIR
+EXEC=../regex_automata
+TEST_DIR=.
 
-# 确保 tests/test_cases.txt 存在
+# 确保 test_cases0.txt 存在
 if [ ! -f "$TEST_DIR/test_cases0.txt" ]; then
-    echo "❌ 没有找到 $TEST_DIR/test_cases.txt，请先生成测试用例文件"
+    echo "❌ 没有找到 $TEST_DIR/test_cases0.txt，请先生成测试用例文件"
     exit 1
 fi
 
