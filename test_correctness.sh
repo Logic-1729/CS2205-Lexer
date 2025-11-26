@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-TEST_FILE="tests/test_cases.txt"
+TEST_FILE="tests/test_cases2.txt"
 
 if [ ! -f "$TEST_FILE" ]; then
     echo "❌ 没有找到 $TEST_FILE"
@@ -19,17 +19,18 @@ while IFS= read -r regex; do
     echo "------------------------------------------------"
     echo "正在测试正则: $regex"
 
-    # 调用 build_and_run.sh 自动生成 dot 文件
+    # 调用 regex_automata 生成 dot 文件
     echo "$regex" | ./regex_automata "$regex"
 
     # 验证 DFA 正确性
     result=$(python3 verify_dot.py "$regex")
 
     if [[ "$result" == *"验证通过"* ]]; then
-        echo "✅ $regex 验证通过"
+        echo "$result"
         pass_count=$((pass_count+1))
     else
-        echo "❌ $regex 验证失败"
+        # 错误时打印详细信息（包含错误样例）
+        echo "$result"
         fail_count=$((fail_count+1))
     fi
 

@@ -12,12 +12,12 @@ def random_string():
     return "".join(random.choice(alphabet) for _ in range(length))
 
 
-def expand_label(label):
-    """展开正则字符集或多字符标签为单个字符集合"""
+def expand_single_label(token: str):
+    """展开单个子标签为字符集合"""
     chars = set()
-    if label.startswith("[") and label.endswith("]"):
+    if token.startswith("[") and token.endswith("]"):
         # 处理字符集
-        content = label[1:-1]
+        content = token[1:-1]
         i = 0
         while i < len(content):
             if i + 2 < len(content) and content[i + 1] == "-":
@@ -30,7 +30,22 @@ def expand_label(label):
                 i += 1
     else:
         # 普通字符串，逐字符展开
-        chars.update(label)
+        chars.update(token)
+    return chars
+
+
+def expand_label(label: str):
+    """
+    支持逗号分隔的多个子标签，例如 "[0-9],[a-y],z"
+    """
+    chars = set()
+    # 去掉可能的引号
+    label = label.strip('"')
+    # 按逗号分割
+    parts = [part.strip() for part in label.split(",")]
+    for part in parts:
+        if part:
+            chars.update(expand_single_label(part))
     return chars
 
 
@@ -45,7 +60,9 @@ def parse_dfa(dot_file):
     start_state = start_edges[0].get_destination() if start_edges else None
 
     # 接受状态
-    accepting = [n.get_name() for n in nodes if n.get_shape() == "doublecircle"]
+    accepting = [
+        n.get_name() for n in nodes if (n.get_shape() or "").lower() == "doublecircle"
+    ]
 
     # 转移表
     transitions = {}
@@ -57,7 +74,7 @@ def parse_dfa(dot_file):
             continue
         if label is None:
             continue
-        label = label.strip('"')
+        label = str(label).strip('"')
         for ch in expand_label(label):
             transitions.setdefault(src, {})[ch] = dst
 
@@ -87,10 +104,10 @@ def verify_regex(regex):
         if expected != actual:
             return (
                 False,
-                f"{regex}: 字符串 {s} 验证失败 (期望 {expected}, 实际 {actual})",
+                f"{regex}: ❌ 错误样例 -> '{s}' (期望 {expected}, 实际 {actual})",
             )
 
-    return True, f"{regex}: 验证通过"
+    return True, f"{regex}: ✅ 验证通过"
 
 
 if __name__ == "__main__":
