@@ -54,7 +54,27 @@ public:
     // 转换为字符串用于显示
     std::string toString() const {
         if (isEpsilon) return "ε";
+        
         std::string res;
+        
+        // 如果是单个字符，进行特殊转义处理以便可视化
+        if (ranges.size() == 1 && ranges.begin()->start == ranges.begin()->end) {
+            char c = ranges.begin()->start;
+            switch (c) {
+                // Note: returning "\\n" (double backslash) so that DOT files 
+                // render the literal characters "\n" instead of an actual newline.
+                case '\n': return "\\\\n"; 
+                case '\t': return "\\\\t";
+                case '\r': return "\\\\r";
+                case ' ':  return " ";
+                case '"':  return "\\\""; // Escape quotes for DOT label
+                case '\\': return "\\\\"; // Escape backslash itself
+                default: 
+                    res += c;
+                    return res;
+            }
+        }
+
         if (ranges.size() > 1 || (ranges.size() == 1 && ranges.begin()->start != ranges.begin()->end)) {
             res += "[";
             for (const auto& r : ranges) {

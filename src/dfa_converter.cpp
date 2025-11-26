@@ -2,14 +2,11 @@
 #include <queue>
 #include <algorithm>
 #include <map>
+#include <vector>
+#include <set>
 
 // 全局缓存：NFA节点ID -> Epsilon闭包集合
-// 注意：在处理新的NFA前应该清空，但本程序一次运行只处理一个正则，故暂不需复杂管理
 static std::map<int, std::set<int>> closureCache;
-
-// Helper: 计算单个节点的 epsilon closure（仅自身及直接通过epsilon到达的）
-// 实际上，我们可以在需要时计算整个集合的闭包，利用已缓存的单个节点闭包
-// 但为了保持现有逻辑结构微调，我们修改 getEpsilonClosure 利用缓存
 
 // 计算单个状态的 Epsilon Closure (带缓存的 DFS/BFS)
 std::set<int> getSingleNodeClosure(int startNodeId, const NFAUnit& nfa) {
@@ -27,9 +24,6 @@ std::set<int> getSingleNodeClosure(int startNodeId, const NFAUnit& nfa) {
         int u = stack.back();
         stack.pop_back();
 
-        // 查找从 u 出发的 epsilon 边
-        // 优化：如果 nfa 数据结构支持邻接表会更快，目前是遍历所有边 O(E)
-        // 建议未来优化 NFAUnit 结构为邻接表
         for (const Edge& e : nfa.edges) {
             if (e.startName->id == u && e.symbol.isEpsilon) {
                 int v = e.endName->id;
@@ -48,9 +42,7 @@ std::set<int> getSingleNodeClosure(int startNodeId, const NFAUnit& nfa) {
 // 优化后的集合闭包计算
 std::set<int> getEpsilonClosure(const std::set<int>& states, const NFAUnit& nfa) {
     std::set<int> result;
-    // 对于集合中的每个状态，合并它们的单节点闭包
     for (int id : states) {
-        // 如果缓存中没有，先计算（虽然 buildDFA 流程中通常是从已知的闭包扩展，但为了安全）
         if (closureCache.find(id) == closureCache.end()) {
             getSingleNodeClosure(id, nfa);
         }
@@ -69,9 +61,18 @@ DFAState epsilonClosure(const std::set<int>& states, const NFAUnit& nfa) {
 
 DFAState move(const DFAState& state, const CharSet& symbol, const NFAUnit& nfa) {
     std::set<int> targetStates;
+    // Use a representative character from the disjoint input set to check coverage
+    char representative = 0;
+    if (!symbol.ranges.empty()) {
+        representative = symbol.ranges.begin()->start;
+    }
+
     for (int nfaStateId : state.nfaStates) {
         for (const Edge& e : nfa.edges) {
-            if (e.startName->id == nfaStateId && e.symbol == symbol) {
+            // Instead of exact equality (e.symbol == symbol), check if edge covers the input range.
+            // Since 'symbol' comes from a disjoint partition of all boundaries, 
+            // e.symbol covers 'symbol' iff it matches a representative char.
+            if (!e.symbol.isEpsilon && e.startName->id == nfaStateId && e.symbol.match(representative)) {
                 targetStates.insert(e.endName->id);
             }
         }
@@ -94,10 +95,37 @@ bool isTransitionInVector(int fromId, int toId,
     return false;
 }
 
+// Helper to generate disjoint canonical inputs from NFA edges
+std::vector<CharSet> getCanonicalInputs(const NFAUnit& nfa) {
+    std::set<int> points;
+    // Collect all interval boundaries
+    for (const Edge& e : nfa.edges) {
+        if (!e.symbol.isEpsilon) {
+            for (const auto& r : e.symbol.ranges) {
+                points.insert((int)r.start);
+                points.insert((int)r.end + 1);
+            }
+        }
+    }
+
+    std::vector<int> sortedPoints(points.begin(), points.end());
+    std::vector<CharSet> inputs;
+
+    for (size_t i = 0; i < sortedPoints.size(); ++i) {
+        if (i + 1 < sortedPoints.size()) {
+            int start = sortedPoints[i];
+            int end = sortedPoints[i+1] - 1;
+            if (start <= end) {
+                inputs.push_back(CharSet((char)start, (char)end));
+            }
+        }
+    }
+    return inputs;
+}
+
 void buildDFAFromNFA(const NFAUnit& nfa,
                      std::vector<DFAState>& dfaStates,
                      std::vector<DFATransition>& dfaTransitions) {
-    // 清空缓存，确保多次调用安全
     closureCache.clear(); 
     
     std::map<std::set<int>, int> existingStates;
@@ -111,15 +139,8 @@ void buildDFAFromNFA(const NFAUnit& nfa,
     dfaStates.push_back(initState);
     existingStates[initState.nfaStates] = initState.id;
 
-    // 收集所有非 ε 的输入符号 (CharSet)
-    std::vector<CharSet> inputs;
-    for (const Edge& e : nfa.edges) {
-        if (!e.symbol.isEpsilon) {
-            bool found = false;
-            for(const auto& existing : inputs) if(existing == e.symbol) found = true;
-            if(!found) inputs.push_back(e.symbol);
-        }
-    }
+    // Collect disjoint input ranges covering all transitions
+    std::vector<CharSet> inputs = getCanonicalInputs(nfa);
 
     for (size_t i = 0; i < dfaStates.size(); ++i) {
         DFAState current = dfaStates[i]; 

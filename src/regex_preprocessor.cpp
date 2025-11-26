@@ -27,6 +27,20 @@ CharSet parseCharSet(const std::string& content) {
     return cs;
 }
 
+// Helper function for handling escape characters
+char getEscapedChar(char c) {
+    switch (c) {
+        case 'n': return '\n';
+        case 't': return '\t';
+        case 'r': return '\r';
+        case '0': return '\0';
+        case '\\': return '\\';
+        case '"': return '"';
+        case '\'': return '\'';
+        default: return c;
+    }
+}
+
 std::vector<Token> preprocessRegex(const std::string& re) {
     std::vector<Token> tokens;
     int n = re.size();
@@ -44,14 +58,34 @@ std::vector<Token> preprocessRegex(const std::string& re) {
                 try {
                     tokens.push_back(Token(parseCharSet(content)));
                 } catch (const RegexSyntaxError& e) {
-                    // 捕获并重新抛出，增加位置信息
                     throw RegexSyntaxError(std::string(e.what()) + " at index " + std::to_string(i));
                 }
                 i = j; 
             } else {
                 throw RegexSyntaxError("Unmatched '[' at index " + std::to_string(i));
             }
-        } else if (c == '(' || c == ')' || c == '*' || c == '|' || c == '?' || c == '+') {
+        } 
+        // Handle String Literals e.g. "abc"
+        else if (c == '"') {
+            int j = i + 1;
+            while (j < n && re[j] != '"') {
+                char current = re[j];
+                if (current == '\\') {
+                    // Escape sequence found
+                    j++;
+                    if (j >= n) throw RegexSyntaxError("Unterminated escape sequence at end of string");
+                    
+                    char escaped = getEscapedChar(re[j]);
+                    tokens.push_back(Token(CharSet(escaped)));
+                } else {
+                    tokens.push_back(Token(CharSet(current)));
+                }
+                j++;
+            }
+            if (j >= n) throw RegexSyntaxError("Unterminated string literal starting at index " + std::to_string(i));
+            i = j; // Move i to the closing quote
+        }
+        else if (c == '(' || c == ')' || c == '*' || c == '|' || c == '?' || c == '+') {
             tokens.push_back(Token(c));
         } else {
             tokens.push_back(Token(CharSet(c)));
