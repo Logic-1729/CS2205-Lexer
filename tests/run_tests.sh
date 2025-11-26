@@ -4,9 +4,9 @@
 EXEC=../regex_automata
 TEST_DIR=.
 
-# 确保 test_cases0.txt 存在
-if [ ! -f "$TEST_DIR/test_cases0.txt" ]; then
-    echo "❌ 没有找到 $TEST_DIR/test_cases0.txt，请先生成测试用例文件"
+# 确保 test_cases.txt 存在
+if [ ! -f "$TEST_DIR/test_cases.txt" ]; then
+    echo "❌ 没有找到 $TEST_DIR/test_cases.txt，请先生成测试用例文件"
     exit 1
 fi
 
