@@ -133,7 +133,7 @@ def generate_testcases(total=20):
 
 
 if __name__ == "__main__":
-    os.makedirs("tests", exist_ok=True)
+    os.makedirs("testcases", exist_ok=True)
     total = 40
     if len(sys.argv) > 1:
         try:
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         except ValueError:
             pass
     cases = generate_testcases(total)
-    with open("tests/test_cases9.txt", "w") as f:
+    with open("testcases/test_cases.txt", "w") as f:
         for case in cases:
             f.write(case + "\n")
-    print(f"✅ 已生成 {total} 条正则表达式到 tests/test_cases.txt")
+    print(f"✅ 已生成 {total} 条正则表达式到 testcases/test_cases.txt")
