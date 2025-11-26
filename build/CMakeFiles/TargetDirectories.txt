@@ -1,3 +1,0 @@
-/home/runner/work/CS2205-Lexer/CS2205-Lexer/build/CMakeFiles/regex_automata.dir
-/home/runner/work/CS2205-Lexer/CS2205-Lexer/build/CMakeFiles/edit_cache.dir
-/home/runner/work/CS2205-Lexer/CS2205-Lexer/build/CMakeFiles/rebuild_cache.dir

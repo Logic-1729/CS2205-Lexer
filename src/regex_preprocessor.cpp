@@ -27,13 +27,50 @@ CharSet parseCharSet(const std::string& content) {
     return cs;
 }
 
+// Parse escape sequence and return the corresponding character
+// Returns the escaped character, advances index past the escape sequence
+char parseEscapeSequence(const std::string& str, int& idx) {
+    if (idx >= static_cast<int>(str.size())) {
+        throw RegexSyntaxError("Incomplete escape sequence at end of string");
+    }
+    char escaped = str[idx];
+    idx++;
+    switch (escaped) {
+        case 'n': return '\n';
+        case 't': return '\t';
+        case 'r': return '\r';
+        case '\\': return '\\';
+        case '"': return '"';
+        default:
+            throw RegexSyntaxError("Unknown escape sequence: \\" + std::string(1, escaped));
+    }
+}
+
 std::vector<Token> preprocessRegex(const std::string& re) {
     std::vector<Token> tokens;
     int n = re.size();
     for (int i = 0; i < n; ++i) {
         char c = re[i];
         
-        if (c == '[') {
+        if (c == '"') {
+            // String literal: tokenize each character individually
+            int j = i + 1;
+            while (j < n && re[j] != '"') {
+                if (re[j] == '\\') {
+                    // Handle escape sequence
+                    j++; // Move past backslash
+                    char escapedChar = parseEscapeSequence(re, j);
+                    tokens.push_back(Token(CharSet(escapedChar)));
+                } else {
+                    tokens.push_back(Token(CharSet(re[j])));
+                    j++;
+                }
+            }
+            if (j >= n) {
+                throw RegexSyntaxError("Unmatched '\"' at index " + std::to_string(i));
+            }
+            i = j; // Move past closing quote
+        } else if (c == '[') {
             std::string content;
             int j = i + 1;
             while (j < n && re[j] != ']') {

@@ -67,6 +67,63 @@ DFAState epsilonClosure(const std::set<int>& states, const NFAUnit& nfa) {
     return state;
 }
 
+// Compute canonical (disjoint) input intervals from all NFA edge symbols
+// This ensures that overlapping ranges are split into non-overlapping intervals
+std::vector<CharSet> computeCanonicalIntervals(const NFAUnit& nfa) {
+    // Collect all boundary points from all character ranges
+    std::set<int> boundaries;
+    for (const Edge& e : nfa.edges) {
+        if (!e.symbol.isEpsilon) {
+            for (const auto& r : e.symbol.ranges) {
+                boundaries.insert(static_cast<unsigned char>(r.start));
+                boundaries.insert(static_cast<unsigned char>(r.end) + 1);
+            }
+        }
+    }
+    
+    // Convert to sorted vector
+    std::vector<int> sortedBoundaries(boundaries.begin(), boundaries.end());
+    
+    // Create disjoint intervals between consecutive boundary points
+    std::vector<CharSet> intervals;
+    for (size_t i = 0; i + 1 < sortedBoundaries.size(); ++i) {
+        int start = sortedBoundaries[i];
+        int end = sortedBoundaries[i + 1] - 1;
+        if (start <= end && start >= 0 && end <= 255) {
+            CharSet cs;
+            cs.isEpsilon = false;
+            cs.addRange(static_cast<char>(start), static_cast<char>(end));
+            intervals.push_back(cs);
+        }
+    }
+    
+    return intervals;
+}
+
+// Modified move function that checks if edge symbol matches the input interval
+// An edge matches if any character in the input interval is accepted by the edge's CharSet
+DFAState moveWithInterval(const DFAState& state, const CharSet& inputInterval, const NFAUnit& nfa) {
+    std::set<int> targetStates;
+    
+    // Get a representative character from the input interval
+    // Since intervals are canonical (disjoint), we just need to pick any character
+    char representativeChar = inputInterval.ranges.begin()->start;
+    
+    for (int nfaStateId : state.nfaStates) {
+        for (const Edge& e : nfa.edges) {
+            if (e.startName->id == nfaStateId && !e.symbol.isEpsilon) {
+                // Check if the edge's CharSet matches the representative character
+                if (e.symbol.match(representativeChar)) {
+                    targetStates.insert(e.endName->id);
+                }
+            }
+        }
+    }
+    DFAState nextState;
+    nextState.nfaStates = targetStates;
+    return nextState;
+}
+
 DFAState move(const DFAState& state, const CharSet& symbol, const NFAUnit& nfa) {
     std::set<int> targetStates;
     for (int nfaStateId : state.nfaStates) {
@@ -111,21 +168,15 @@ void buildDFAFromNFA(const NFAUnit& nfa,
     dfaStates.push_back(initState);
     existingStates[initState.nfaStates] = initState.id;
 
-    // 收集所有非 ε 的输入符号 (CharSet)
-    std::vector<CharSet> inputs;
-    for (const Edge& e : nfa.edges) {
-        if (!e.symbol.isEpsilon) {
-            bool found = false;
-            for(const auto& existing : inputs) if(existing == e.symbol) found = true;
-            if(!found) inputs.push_back(e.symbol);
-        }
-    }
+    // Compute canonical (disjoint) input intervals from all NFA edges
+    std::vector<CharSet> inputs = computeCanonicalIntervals(nfa);
 
     for (size_t i = 0; i < dfaStates.size(); ++i) {
         DFAState current = dfaStates[i]; 
 
         for (const auto& symbol : inputs) {
-            DFAState moved = move(current, symbol, nfa);
+            // Use the new moveWithInterval function that handles overlapping ranges
+            DFAState moved = moveWithInterval(current, symbol, nfa);
             if (!moved.nfaStates.empty()) {
                 DFAState closure = epsilonClosure(moved.nfaStates, nfa);
 
