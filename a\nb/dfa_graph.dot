@@ -1,0 +1,8 @@
+digraph DFA { rankdir=LR; node [shape=circle];
+  __start0 [shape=none, label=""];
+  __start0 -> 0;
+  3 [shape=doublecircle];
+  0 -> 1 [label="a"];
+  1 -> 2 [label="\\n"];
+  2 -> 3 [label="b"];
+}
