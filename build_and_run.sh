@@ -43,17 +43,14 @@ do
     read -r -p "请输入正则表达式: " regex_input
     
     # 2. 设置文件夹名
-    # 仅移除双引号和单引号，保留反斜杠
-    # 注意：在 Windows 上反斜杠是路径分隔符，可能导致创建多级目录
-    folder_name=$(echo "$regex_input" | tr -d '"' | tr -d "'")
+    # 移除双引号、单引号、反斜杠，并将斜杠转换为下划线
+    folder_name=$(echo "$regex_input" | tr -d '"\\' | tr -d "'" | sed 's/\//_/g')
     
-    # 如果是空（极其罕见），给个默认值
     if [ -z "$folder_name" ]; then
         folder_name="regex_task_$i"
     fi
     
     echo "创建输出目录: $folder_name"
-    # 使用引号包裹文件夹名以处理空格或特殊字符
     mkdir -p "./$folder_name"
     
     # 运行 C++ 程序
