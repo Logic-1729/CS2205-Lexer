@@ -45,6 +45,16 @@
 | `dfa_converter.cpp` | 实现 NFA 到 DFA 的转换逻辑（含闭包缓存）。 |
 | `visualize.cpp` | 负责生成 Graphviz `.dot` 文件。 |
 
+测试脚本位于 `tests/` 目录下：
+
+| 文件名 | 功能描述 |
+| :--- | :--- |
+| `test_correctness.sh` | 批量测试正则表达式的 DFA 正确性。 |
+| `run_tests.sh` | 自动化测试脚本。 |
+| `gen_testcases.py` | 生成测试用例的 Python 脚本。 |
+| `verify_dot.py` | 验证生成的 DFA 正确性的 Python 脚本。 |
+| `test_cases*.txt` | 测试用例文件。 |
+
 ## 环境配置
 
 ### 1. 基础环境
@@ -101,6 +111,41 @@ cmake --build .
 *   程序会从标准输入读取一个正则表达式。
 *   生成的 `nfa_graph.dot` 和 `dfa_graph.dot` 将保存在指定目录中。
 
+## 测试
+
+本项目提供了自动化测试脚本，用于验证 DFA 的正确性。
+
+### 环境准备
+
+1.  **安装依赖**:
+    ```bash
+    pip install pydot
+    ```
+
+2.  **赋予脚本执行权限**:
+    ```bash
+    chmod +x tests/test_correctness.sh
+    ```
+
+### 运行测试
+
+1.  进入 `tests` 目录:
+    ```bash
+    cd tests
+    ```
+
+2.  运行测试脚本:
+    ```bash
+    ./test_correctness.sh
+    ```
+
+### 切换测试用例
+
+可以通过修改 `test_correctness.sh` 中的 `TEST_FILE` 变量来切换不同的测试用例文件：
+```bash
+TEST_FILE="test_cases2.txt"  # 可修改为其他测试文件，如 test_cases0.txt, test_cases1.txt 等
+```
+
 ## 输出结果
 
 脚本会自动为每个正则表达式创建一个独立的文件夹（名称经过安全清洗），包含：
@@ -111,4 +156,3 @@ cmake --build .
 
 ---
 *注意：生成的文件夹名称可能会保留部分特殊字符（如括号），在终端操作时请使用引号包裹路径。*
-```

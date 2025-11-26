@@ -1,4 +1,4 @@
-# # 命令行中输入 python3 gen_testcases.py 即可生成 total 个测试样例至 tests 文件夹下的 test_cases 文件里
+# 命令行中输入 python3 gen_testcases.py 即可生成 total 个测试样例至当前目录下的 test_cases 文件里
 
 # import os
 # import random
@@ -70,13 +70,12 @@
 #             f.write(case + "\n")
 #     print(f"✅ 已生成 {total} 条测试用例到 tests/test_cases1.txt")
 
-# 命令行中输入 python3 gen_testcases.py 即可生成 total 个测试样例至 tests 文件夹下的 test_cases 文件里
+# 命令行中输入 python3 gen_testcases.py 即可生成 total 个测试样例至当前目录下的 test_cases 文件里
 
-# 命令行中输入 python3 gen_testcases.py 即可生成 total 个正则表达式至 tests 文件夹下的 test_cases 文件里
+# 命令行中输入 python3 gen_testcases.py 即可生成 total 个正则表达式至当前目录下的 test_cases 文件里
 
 
 # Generate true regex without MATCH and NO_MATCH
-import os
 import random
 import sys
 
@@ -133,7 +132,6 @@ def generate_testcases(total=20):
 
 
 if __name__ == "__main__":
-    os.makedirs("tests", exist_ok=True)
     total = 40
     if len(sys.argv) > 1:
         try:
@@ -141,7 +139,7 @@ if __name__ == "__main__":
         except ValueError:
             pass
     cases = generate_testcases(total)
-    with open("tests/test_cases9.txt", "w") as f:
+    with open("test_cases9.txt", "w") as f:
         for case in cases:
             f.write(case + "\n")
-    print(f"✅ 已生成 {total} 条正则表达式到 tests/test_cases.txt")
+    print(f"✅ 已生成 {total} 条正则表达式到 test_cases9.txt")
