@@ -1,13 +1,14 @@
 #!/bin/bash
 # 自动化测试 Regex Automata 项目
 
-EXEC=./regex_automata
-TEST_DIR=tests
-mkdir -p $TEST_DIR
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXEC="$SCRIPT_DIR/../regex_automata"
+TEST_FILE="$SCRIPT_DIR/test_cases.txt"
 
-# 确保 tests/test_cases.txt 存在
-if [ ! -f "$TEST_DIR/test_cases0.txt" ]; then
-    echo "❌ 没有找到 $TEST_DIR/test_cases.txt，请先生成测试用例文件"
+# 确保 test_cases.txt 存在
+if [ ! -f "$TEST_FILE" ]; then
+    echo "❌ 没有找到 $TEST_FILE，请先生成测试用例文件"
     exit 1
 fi
 
@@ -52,6 +53,6 @@ PYCODE
         fail_count=$((fail_count+1))
     fi
 
-done < "$TEST_DIR/test_cases.txt"
+done < "$TEST_FILE"
 
 echo "=== 测试完成: 通过 $pass_count 条, 失败 $fail_count 条 ==="

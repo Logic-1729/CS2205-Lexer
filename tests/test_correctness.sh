@@ -1,7 +1,11 @@
 #!/bin/bash
 set -e
 
-TEST_FILE="tests/test_cases2.txt"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR/.."
+EXEC="$REPO_ROOT/regex_automata"
+TEST_FILE="$SCRIPT_DIR/test_cases2.txt"
 
 if [ ! -f "$TEST_FILE" ]; then
     echo "❌ 没有找到 $TEST_FILE"
@@ -20,10 +24,10 @@ while IFS= read -r regex; do
     echo "正在测试正则: $regex"
 
     # 调用 regex_automata 生成 dot 文件
-    echo "$regex" | ./regex_automata "$regex"
+    echo "$regex" | "$EXEC" "$regex"
 
     # 验证 DFA 正确性
-    result=$(python3 verify_dot.py "$regex")
+    result=$(python3 "$SCRIPT_DIR/verify_dot.py" "$regex")
 
     if [[ "$result" == *"验证通过"* ]]; then
         echo "$result"
