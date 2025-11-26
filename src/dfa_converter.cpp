@@ -71,12 +71,14 @@ DFAState epsilonClosure(const std::set<int>& states, const NFAUnit& nfa) {
 // This ensures that overlapping ranges are split into non-overlapping intervals
 std::vector<CharSet> computeCanonicalIntervals(const NFAUnit& nfa) {
     // Collect all boundary points from all character ranges
+    // Use int to avoid overflow when r.end is 255 (max unsigned char)
     std::set<int> boundaries;
     for (const Edge& e : nfa.edges) {
         if (!e.symbol.isEpsilon) {
             for (const auto& r : e.symbol.ranges) {
-                boundaries.insert(static_cast<unsigned char>(r.start));
-                boundaries.insert(static_cast<unsigned char>(r.end) + 1);
+                boundaries.insert(static_cast<int>(static_cast<unsigned char>(r.start)));
+                // Use int arithmetic to avoid overflow when r.end is 255
+                boundaries.insert(static_cast<int>(static_cast<unsigned char>(r.end)) + 1);
             }
         }
     }
@@ -89,7 +91,8 @@ std::vector<CharSet> computeCanonicalIntervals(const NFAUnit& nfa) {
     for (size_t i = 0; i + 1 < sortedBoundaries.size(); ++i) {
         int start = sortedBoundaries[i];
         int end = sortedBoundaries[i + 1] - 1;
-        if (start <= end && start >= 0 && end <= 255) {
+        // Valid character range is [0, 255]
+        if (start <= end && start >= 0 && start <= 255 && end <= 255) {
             CharSet cs;
             cs.isEpsilon = false;
             cs.addRange(static_cast<char>(start), static_cast<char>(end));
@@ -102,8 +105,15 @@ std::vector<CharSet> computeCanonicalIntervals(const NFAUnit& nfa) {
 
 // Modified move function that checks if edge symbol matches the input interval
 // An edge matches if any character in the input interval is accepted by the edge's CharSet
+// Precondition: inputInterval must have at least one range (non-empty ranges set)
 DFAState moveWithInterval(const DFAState& state, const CharSet& inputInterval, const NFAUnit& nfa) {
     std::set<int> targetStates;
+    
+    // Safety check: ensure inputInterval has at least one range
+    if (inputInterval.ranges.empty()) {
+        DFAState emptyState;
+        return emptyState;
+    }
     
     // Get a representative character from the input interval
     // Since intervals are canonical (disjoint), we just need to pick any character

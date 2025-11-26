@@ -27,8 +27,10 @@ CharSet parseCharSet(const std::string& content) {
     return cs;
 }
 
-// Parse escape sequence and return the corresponding character
-// Returns the escaped character, advances index past the escape sequence
+// Parse escape sequence and return the corresponding character.
+// The idx parameter should point to the character immediately after the backslash.
+// On return, idx will be advanced past the escape sequence character.
+// Throws RegexSyntaxError if the escape sequence is incomplete or unknown.
 char parseEscapeSequence(const std::string& str, int& idx) {
     if (idx >= static_cast<int>(str.size())) {
         throw RegexSyntaxError("Incomplete escape sequence at end of string");
