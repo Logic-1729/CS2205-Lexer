@@ -1,40 +1,40 @@
-a*b	ab	MATCH
-[A-Z][a-z]*	World	MATCH
-(ab|cd)	cd	MATCH
-[a-z]+	xyz	MATCH
-a*b	b	MATCH
-ab	ab	MATCH
-ab	ab	MATCH
-(ab|cd)	ab	MATCH
-[a-z]+	hello	MATCH
-a*b	b	MATCH
-(ab|cd)	cd	MATCH
-[0-9]+	123	MATCH
-[a-z]+	hello	MATCH
-ab	ab	MATCH
-ab	ab	MATCH
-a*b	b	MATCH
-(ab|cd)	ab	MATCH
-[a-z]+	xyz	MATCH
-a*b	b	MATCH
-[A-Z][a-z]*	Hello	MATCH
-(ab|cd)	6XG	NO_MATCH
-[A-Z][a-z]*	3s	NO_MATCH
-ab	v5	NO_MATCH
-a*b	ur9LF	NO_MATCH
-a*b	cNZj	NO_MATCH
-ab	l4Ize8	NO_MATCH
-[a-z]+	7quFqY	NO_MATCH
-[a-z]+	Hy49	NO_MATCH
-(ab|cd)	goma	NO_MATCH
-[0-9]+	yElt	NO_MATCH
-ab	kZmxX	NO_MATCH
-ab	Ua	NO_MATCH
-(ab|cd)	r3	NO_MATCH
-[a-z]+	5u2Pcq	NO_MATCH
-a*b	B2XS3	NO_MATCH
-[0-9]+	ob33	NO_MATCH
-[0-9]+	2teBr7	NO_MATCH
-ab	Mupr	NO_MATCH
-[a-z]+	6	NO_MATCH
-a*b	rYs0	NO_MATCH
+(x+b?c*[a-z0-9]y+|c+yc*z[a-z0-9]?)
+[a-z0-9]*yyz?b?b?x*[A-Z]+z?
+ca*x*a[A-Z]+bz*
+([a-z0-9]b+a[A-Z]+|z?xc?y*a?)
+(x+d+b?z+|c*a+xd+x)
+(c*d+[a-z0-9]+|b*[a-z0-9]z+d+)
+(x?xd+a?a|c?c?ay+z+)
+[A-Z]*y*a?y?x+ac+y*x+
+(a+y+x|b?y+z+z*)
+([a-z0-9]*z*x*|d+[a-z0-9]?z+)
+(x+c*[A-Z]*[a-z0-9]?|x*a?x*z?)
+dadb+c*x*x+
+([a-z0-9]?b?d*c+[a-z0-9]*|a+a*[a-z0-9]+yc*)
+([A-Z]zyy[A-Z]+|[A-Z][A-Z]+z+a?x*)
+([A-Z]?y*d*|zby?d?)
+(bz?[a-z0-9]|xd*b+)
+[a-z0-9]?x[a-z0-9]?[a-z0-9]+c?[a-z0-9]?yd?c*
+(x+z[a-z0-9]*d?|axc*b*y?)
+a*b?c[a-z0-9]bc?[A-Z]+yb?b
+[a-z0-9]+a*b?d?[a-z0-9]+[A-Z][A-Z]*[A-Z]+
+(bd?a*|ay+[a-z0-9]*)
+dz+d*da?[a-z0-9]?cz?x*
+z?yx+x+a+[A-Z]*x+x+[a-z0-9]*
+([A-Z]+[A-Z][A-Z]*x?x|c?d*b+[A-Z]*b)
+z+c?[A-Z]+z*z?x
+[A-Z]+y?z?c+a*c[A-Z]c+z?[a-z0-9]?
+bz+[a-z0-9]+a+bx
+zb+a?cz[A-Z]*x+d*[A-Z]
+[A-Z]?b+z+[a-z0-9]zc?b?z*y*a
+x*x?xc+y*y*xy+z?
+([a-z0-9]?a[A-Z]+|b+d+[A-Z]?c)
+(b*[A-Z]?a*|c?b+b?x)
+d[a-z0-9]*z?[A-Z]?x+[A-Z]*[a-z0-9]+
+[A-Z]?d+b?b+c+z?z+[A-Z]
+d*z?ad+a*z+b*x*y+d*
+(y+x*y|y+[A-Z][a-z0-9]+)
+b*z?b*c*y*z*
+(b+bb*|x*xc+[a-z0-9]*)
+x+x[a-z0-9]*x*y+b*
+[A-Z]xd?c?y?c?y*a+b+x*

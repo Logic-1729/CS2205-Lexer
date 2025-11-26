@@ -1,20 +1,20 @@
-a*b	b	MATCH
-[0-9]+	2025	MATCH
-[A-Z][a-z]*	Hello	MATCH
-[0-9]+	123	MATCH
-[0-9]+	2025	MATCH
-[0-9]+	2025	MATCH
-a*b	ab	MATCH
-(ab|cd)	cd	MATCH
-[0-9]+	123	MATCH
-[a-z]+	xyz	MATCH
-(ab|cd)	V	NO_MATCH
-ab	Oc	NO_MATCH
-(ab|cd)	5Lnow	NO_MATCH
-(ab|cd)	uKkYj6	NO_MATCH
-a*b	iaZnvA	NO_MATCH
-a*b	c2	NO_MATCH
-(ab|cd)	KCRMx	NO_MATCH
-(ab|cd)	Tz7yZM	NO_MATCH
-(ab|cd)	d	NO_MATCH
-a*b	D	NO_MATCH
+d*y+z+x*y
+([A-Z]+[A-Z]+z|c?x?x?)
+(d*ba+|x?az)
+b*[A-Z]*x+
+b?b[a-z0-9]+
+(y?c|[A-Z]?y)
+y*zd+x*
+cxb+a
+[a-z0-9]c*[a-z0-9]+a?
+[A-Z]d?x*b+d+a?
+y?d?d?a*
+(y+[A-Z]*|zc+)
+b+a*x+y*[a-z0-9]x+
+bc+d[A-Z]*
+y?[a-z0-9]z+x*
+(c+|by*)
+dy*y[a-z0-9]?
+a?z?z*d+ay
+(d?d*|a+y+x+)
+([a-z0-9]?b|x+b?)

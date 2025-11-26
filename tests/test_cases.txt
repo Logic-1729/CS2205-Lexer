@@ -1,20 +1,20 @@
-[A-Z][a-z]*	World	MATCH
-[a-z]+	hello	MATCH
-a*b	ab	MATCH
-[A-Z][a-z]*	World	MATCH
-a*b	aaab	MATCH
-ab	ab	MATCH
-[A-Z][a-z]*	World	MATCH
-[a-z]+	xyz	MATCH
-[a-z]+	xyz	MATCH
-ab	ab	MATCH
-[a-z]+	cuVw0	NO_MATCH
-[a-z]+	IgX	NO_MATCH
-[0-9]+	wUZ	NO_MATCH
-(ab|cd)	dmY	NO_MATCH
-[0-9]+	9Vs	NO_MATCH
-(ab|cd)	Wn0	NO_MATCH
-[A-Z][a-z]*	OhWTqt	NO_MATCH
-a*b	BL	NO_MATCH
-[0-9]+	WS	NO_MATCH
-ab	Hao	NO_MATCH
+x*d?ay
+x?x*[A-Z]*[A-Z]y+a
+(za|[A-Z]?d*y+)
+z[A-Z]+a+
+[A-Z][A-Z]?c*c*d?d+
+[a-z0-9]+[a-z0-9]+yy?
+[a-z0-9]*[a-z0-9]*[A-Z]?[a-z0-9]z?
+x+a[A-Z]?a+
+y*a+x?d+
+bc*xa[A-Z]?c
+(az?|x+[a-z0-9]+[A-Z])
+(a+z+y|x*a*b+)
+z+b?az[A-Z]a*
+zc*a?y?z+
+([A-Z]+|d?c?)
+y*y*a[A-Z]*d*
+(a*c?|dx)
+yy*cy*
+([a-z0-9]?d*|b+b+)
+d*d[a-z0-9]

@@ -1,20 +1,20 @@
-a*b	ab	MATCH
-a*b	b	MATCH
-[A-Z][a-z]*	Hello	MATCH
-[A-Z][a-z]*	World	MATCH
-[0-9]+	2025	MATCH
-[A-Z][a-z]*	World	MATCH
-ab	ab	MATCH
-[A-Z][a-z]*	Hello	MATCH
-(ab|cd)	cd	MATCH
-(ab|cd)	cd	MATCH
-[a-z]+	eVC00h	NO_MATCH
-[a-z]+	Y58	NO_MATCH
-a*b	h	NO_MATCH
-[0-9]+	G	NO_MATCH
-ab	ZrYear	NO_MATCH
-a*b	PiX	NO_MATCH
-ab	zF	NO_MATCH
-(ab|cd)	S9s9	NO_MATCH
-[a-z]+	6	NO_MATCH
-[0-9]+	a	NO_MATCH
+b+zz*b*[A-Z]?
+c?z*z+
+(z+|bd+)
+[A-Z]?dza+
+c*a+[a-z0-9]c+y
+z*d*z+b*z?
+([A-Z]*a[A-Z]+|z+b?[a-z0-9]?)
+d?za
+(c+|b*x)
+(y+b+|b[A-Z]?)
+[A-Z]+db+[a-z0-9]+d?d*
+[A-Z]?x?x+a?d+
+c?x+c?b+z[A-Z]?
+b[a-z0-9][a-z0-9]+
+x*z*d+
+[a-z0-9]?x*d+c?
+z*a+d[a-z0-9]?[A-Z]
+x?x*d[A-Z]+y?[A-Z]
+[a-z0-9][a-z0-9]*c+x*
+(c?[a-z0-9]?|z?z?)
