@@ -1,3 +1,4 @@
+# the version that uses random strings to test
 # import sys
 # import os
 # import re
@@ -115,18 +116,35 @@
 #     ok, msg = verify_regex(regex)
 #     print(msg)
 
+
+# the version that uses strings which are related to the regex to test, making the outcome more convincing
 import sys
 import os
 import re
 import random
 import pydot
 
-alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+# number of total examples to test per regex
+EXAMPLE_COUNT = 50
+
+# Fallback random string length range for filler samples
+RANDOM_MIN_LEN = 0
+RANDOM_MAX_LEN = 8
+
+# DOT parsing specifics
+DFA_DOT_FILENAME = "dfa_graph.dot"
+START_EDGE_SOURCE = "__start0"
+ACCEPT_NODE_SHAPE = "doublecircle"
+
+# Label parsing
+LABEL_SEPARATOR = ","
 
 
-def random_string(min_len=0, max_len=8):
+def random_string(min_len=RANDOM_MIN_LEN, max_len=RANDOM_MAX_LEN):
     length = random.randint(min_len, max_len)
-    return "".join(random.choice(alphabet) for _ in range(length))
+    return "".join(random.choice(ALPHABET) for _ in range(length))
 
 
 # ----- DOT label expansion -----
@@ -158,7 +176,7 @@ def expand_label(label: str):
     """Support comma-separated label parts, e.g. '[0-9],[a-y],z'."""
     chars = set()
     label = str(label).strip('"')
-    parts = [p.strip() for p in label.split(",") if p.strip()]
+    parts = [p.strip() for p in label.split(LABEL_SEPARATOR) if p.strip()]
     for part in parts:
         chars.update(expand_single_label(part))
     return chars
@@ -174,12 +192,14 @@ def parse_dfa(dot_file):
     nodes = graph.get_nodes()
 
     # Start state via __start0 -> S
-    start_edges = [e for e in edges if e.get_source() == "__start0"]
+    start_edges = [e for e in edges if e.get_source() == START_EDGE_SOURCE]
     start_state = start_edges[0].get_destination() if start_edges else None
 
     # Accepting states
     accepting = [
-        n.get_name() for n in nodes if (n.get_shape() or "").lower() == "doublecircle"
+        n.get_name()
+        for n in nodes
+        if (n.get_shape() or "").lower() == ACCEPT_NODE_SHAPE
     ]
 
     # Transitions: state -> {char -> next_state}
@@ -188,7 +208,7 @@ def parse_dfa(dot_file):
         src = e.get_source()
         dst = e.get_destination()
         label = e.get_label()
-        if src == "__start0" or label is None:
+        if src == START_EDGE_SOURCE or label is None:
             continue
         for ch in expand_label(label):
             transitions.setdefault(src, {})[ch] = dst
@@ -212,15 +232,15 @@ def simulate_dfa(start, accepting, transitions, s):
 def mutate_string(s):
     """Slightly perturb a string for negative examples."""
     if not s:
-        return random.choice(alphabet)
+        return random.choice(ALPHABET)
     ops = ["replace", "insert", "delete"]
     op = random.choice(ops)
     i = random.randrange(len(s))
     if op == "replace":
-        c = random.choice(alphabet)
+        c = random.choice(ALPHABET)
         return s[:i] + c + s[i + 1 :]
     elif op == "insert":
-        c = random.choice(alphabet)
+        c = random.choice(ALPHABET)
         return s[:i] + c + s[i:]
     else:  # delete
         return s[:i] + s[i + 1 :]
@@ -310,7 +330,7 @@ def gen_segment(atom, quant):
         return rep
 
 
-def generate_near_examples(regex, count=50):
+def generate_near_examples(regex, count=EXAMPLE_COUNT):
     """
     Generate near-regex examples:
     - Positives: build strings from simplified alternations and quantifiers.
@@ -337,7 +357,7 @@ def generate_near_examples(regex, count=50):
 
     # If fewer than count, add random samples as filler (also labeled)
     while len(labeled) < count:
-        s = random_string(0, 8)
+        s = random_string(RANDOM_MIN_LEN, RANDOM_MAX_LEN)
         labeled.append((s, re.fullmatch(regex, s) is not None))
 
     random.shuffle(labeled)
@@ -347,14 +367,19 @@ def generate_near_examples(regex, count=50):
 # ----- Verification -----
 
 
+# Build full dot path from regex
+def build_dot_path(regex: str) -> str:
+    return os.path.join(regex, DFA_DOT_FILENAME)
+
+
 def verify_regex(regex):
-    dot_file = f"{regex}/dfa_graph.dot"
+    dot_file = build_dot_path(regex)
     if not os.path.exists(dot_file):
         return False, f"{regex}: dot文件不存在"
 
     start, accepting, transitions = parse_dfa(dot_file)
 
-    examples = generate_near_examples(regex, 50)
+    examples = generate_near_examples(regex, EXAMPLE_COUNT)
     errors = []
     for s, expected in examples:
         actual = simulate_dfa(start, accepting, transitions, s)
