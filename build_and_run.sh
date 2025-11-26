@@ -52,6 +52,7 @@ do
     mkdir -p "./$folder_name"
     
     # 运行 C++ 程序
+    chmod +x ./regex_automata
     echo "$regex_input" | ./regex_automata "./$folder_name"
     
     # 3. 生成图片
