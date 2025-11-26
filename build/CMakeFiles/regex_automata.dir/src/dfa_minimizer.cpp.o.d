@@ -1,7 +1,8 @@
 CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o: \
- /home/logic/DFA/src/dfa_minimizer.cpp /usr/include/stdc-predef.h \
- /home/logic/DFA/src/dfa.h /usr/include/c++/13/string \
- /usr/include/c++/13/bits/requires_hosted.h \
+ /home/runner/work/CS2205-Lexer/CS2205-Lexer/src/dfa_minimizer.cpp \
+ /usr/include/stdc-predef.h \
+ /home/runner/work/CS2205-Lexer/CS2205-Lexer/src/dfa.h \
+ /usr/include/c++/13/string /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -124,7 +125,8 @@ CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o: \
  /usr/include/c++/13/bits/node_handle.h \
  /usr/include/c++/13/bits/stl_set.h \
  /usr/include/c++/13/bits/stl_multiset.h \
- /usr/include/c++/13/bits/erase_if.h /home/logic/DFA/src/nfa.h \
+ /usr/include/c++/13/bits/erase_if.h \
+ /home/runner/work/CS2205-Lexer/CS2205-Lexer/src/nfa.h \
  /usr/include/c++/13/iostream /usr/include/c++/13/ostream \
  /usr/include/c++/13/ios /usr/include/c++/13/exception \
  /usr/include/c++/13/bits/exception_ptr.h \

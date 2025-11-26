@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/regex_automata.dir/link.d"
   "CMakeFiles/regex_automata.dir/src/dfa_converter.cpp.o"
   "CMakeFiles/regex_automata.dir/src/dfa_converter.cpp.o.d"
   "CMakeFiles/regex_automata.dir/src/dfa_minimizer.cpp.o"

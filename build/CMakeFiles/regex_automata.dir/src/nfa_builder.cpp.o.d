@@ -1,7 +1,8 @@
 CMakeFiles/regex_automata.dir/src/nfa_builder.cpp.o: \
- /home/logic/DFA/src/nfa_builder.cpp /usr/include/stdc-predef.h \
- /home/logic/DFA/src/nfa.h /usr/include/c++/13/string \
- /usr/include/c++/13/bits/requires_hosted.h \
+ /home/runner/work/CS2205-Lexer/CS2205-Lexer/src/nfa_builder.cpp \
+ /usr/include/stdc-predef.h \
+ /home/runner/work/CS2205-Lexer/CS2205-Lexer/src/nfa.h \
+ /usr/include/c++/13/string /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -183,7 +184,8 @@ CMakeFiles/regex_automata.dir/src/nfa_builder.cpp.o: \
  /usr/include/c++/13/bits/stl_heap.h \
  /usr/include/c++/13/bits/uniform_int_dist.h \
  /usr/include/c++/13/pstl/glue_algorithm_defs.h \
- /home/logic/DFA/src/regex_parser.h /usr/include/c++/13/variant \
+ /home/runner/work/CS2205-Lexer/CS2205-Lexer/src/regex_parser.h \
+ /usr/include/c++/13/variant \
  /usr/include/c++/13/bits/enable_special_members.h \
  /usr/include/c++/13/bits/parse_numbers.h /usr/include/c++/13/stack \
  /usr/include/c++/13/deque /usr/include/c++/13/bits/stl_deque.h \
