@@ -109,6 +109,44 @@ cmake --build .
 *   `dfa_graph.dot`: DFA 的 Graphviz 描述文件。
 *   `dfa.png`: DFA 的可视化图片。
 
+## Testing
+
+测试脚本位于 `tests/` 目录下。
+
+### 1. 安装依赖
+
+首先安装 Python 依赖包 `pydot`：
+
+```bash
+pip install pydot
+```
+
+### 2. 运行测试
+
+1.  **进入 `tests` 目录**:
+    ```bash
+    cd tests
+    ```
+
+2.  **赋予脚本执行权限**:
+    ```bash
+    chmod +x test_correctness.sh
+    ```
+
+3.  **运行测试脚本**:
+    ```bash
+    ./test_correctness.sh
+    ```
+
+### 3. 自定义测试用例
+
+您可以修改 `test_correctness.sh` 脚本中的 `TEST_FILE` 变量来测试不同的测试用例文件：
+
+```bash
+TEST_FILE="$SCRIPT_DIR/test_cases2.txt"  # 修改为其他测试文件，如 test_cases0.txt
+```
+
+`tests/` 目录下提供了多个测试用例文件（`test_cases0.txt` 至 `test_cases9.txt`）供选择。
+
 ---
 *注意：生成的文件夹名称可能会保留部分特殊字符（如括号），在终端操作时请使用引号包裹路径。*
-```
