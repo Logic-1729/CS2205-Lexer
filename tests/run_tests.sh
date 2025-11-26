@@ -7,8 +7,8 @@ EXEC="$SCRIPT_DIR/../regex_automata"
 TEST_FILE="$SCRIPT_DIR/test_cases.txt"
 
 # 确保 test_cases.txt 存在
-if [ ! -f "$SCRIPT_DIR/test_cases0.txt" ]; then
-    echo "❌ 没有找到 $SCRIPT_DIR/test_cases.txt，请先生成测试用例文件"
+if [ ! -f "$TEST_FILE" ]; then
+    echo "❌ 没有找到 $TEST_FILE，请先生成测试用例文件"
     exit 1
 fi
 
