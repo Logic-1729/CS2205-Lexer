@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-TEST_FILE="testcases/test_cases2.txt"
+TEST_FILE="testcases/test_cases9.txt"
 
 if [ ! -f "$TEST_FILE" ]; then
     echo "❌ 没有找到 $TEST_FILE"

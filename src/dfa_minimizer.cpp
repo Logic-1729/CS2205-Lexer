@@ -2,11 +2,16 @@
 #include <map>
 #include <algorithm>
 #include <iostream>
+#include <vector>
+#include <set>
+#include <tuple>
 
 // 辅助：获取某个状态在哪个分区
-int getPartitionId(int stateId, const std::vector<std::set<int>>& partitions) {
+int getPartitionId(int stateId, const std::vector<std::vector<int>>& partitions) {
     for (size_t i = 0; i < partitions.size(); ++i) {
-        if (partitions[i].count(stateId)) return static_cast<int>(i);
+        for (int state : partitions[i]) {
+            if (state == stateId) return static_cast<int>(i);
+        }
     }
     return -1;
 }
@@ -29,151 +34,207 @@ void minimizeDFA(const std::vector<DFAState>& dfaStates,
     
     if (dfaStates.empty()) return;
 
-    // 1. 初始划分：接受状态组 和 非接受状态组
-    std::set<int> accepting, nonAccepting;
-    for (const auto& s : dfaStates) {
-        if (s.nfaStates.count(originalNFAEndId)) {
-            accepting.insert(s.id);
-        } else {
-            nonAccepting.insert(s.id);
-        }
+    // 创建状态ID到索引的映射
+    std::map<int, int> stateIdToIdx;
+    for (size_t i = 0; i < dfaStates.size(); ++i) {
+        stateIdToIdx[dfaStates[i].id] = i;
     }
 
-    std::vector<std::set<int>> partitions;
-    if (!nonAccepting.empty()) partitions.push_back(nonAccepting);
-    if (!accepting.empty()) partitions.push_back(accepting);
+    // 1. 初始划分：使用 vector<vector<int>> 存储分区
+    std::vector<std::vector<int>> partitions;
+    std::vector<int> nonAcceptingStates;
+    std::vector<int> acceptingStates;
+    
+    // 存储每个状态当前所在的分区编号
+    std::vector<int> stateGroup(dfaStates.size());
+    
+    for (const auto& s : dfaStates) {
+        if (s. nfaStates.count(originalNFAEndId)) {
+            acceptingStates.push_back(s.id);
+        } else {
+            nonAcceptingStates.push_back(s. id);
+        }
+    }
+    
+    // 初始化分区和分组映射
+    if (! nonAcceptingStates.empty()) {
+        partitions.push_back(nonAcceptingStates);
+        for (int state : nonAcceptingStates) {
+            stateGroup[stateIdToIdx[state]] = 0;
+        }
+    }
+    if (!acceptingStates.empty()) {
+        int grpIdx = partitions.size();
+        partitions.push_back(acceptingStates);
+        for (int state : acceptingStates) {
+            stateGroup[stateIdToIdx[state]] = grpIdx;
+        }
+    }
 
     // 收集所有出现过的输入符号
     std::vector<CharSet> alphabet;
     for (const auto& t : dfaTransitions) {
         bool exists = false;
-        for(const auto& a : alphabet) if(a == t.transitionSymbol) exists = true;
-        if(!exists) alphabet.push_back(t.transitionSymbol);
+        for (const auto& a : alphabet) {
+            if (a == t.transitionSymbol) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) alphabet. push_back(t.transitionSymbol);
     }
 
-    // 2. 不断分割分区
+    // 2. 不断分割分区（分区细化算法）
     bool changed = true;
     while (changed) {
         changed = false;
-        std::vector<std::set<int>> newPartitions;
+        std::vector<std::vector<int>> newPartitions;
 
-        for (const auto& group : partitions) {
-            if (group.size() <= 1) {
-                newPartitions.push_back(group);
+        // 对每个分区进行检查
+        for (size_t partIdx = 0; partIdx < partitions.size(); ++partIdx) {
+            const auto& partition = partitions[partIdx];
+            
+            if (partition.size() <= 1) {
+                newPartitions. push_back(partition);
                 continue;
             }
 
-            // 尝试根据每个输入符号分割当前组
-            // Map: Signature (vector of target partition IDs) -> Subgroup
-            std::map<std::vector<int>, std::set<int>> splitGroups;
-
-            for (int stateId : group) {
-                std::vector<int> signature;
-                for (const auto& symbol : alphabet) {
-                    int target = getTargetState(stateId, symbol, dfaTransitions);
-                    if (target == -1) {
-                        signature.push_back(-1); // 死状态/无转移
-                    } else {
-                        signature.push_back(getPartitionId(target, partitions));
+            bool partitionSplit = false;
+            
+            // 对每个输入符号检查是否需要分割
+            for (const auto& symbol : alphabet) {
+                // 创建 transition signature -> states 的映射
+                // 使用 vector<int> 作为签名，每个符号对应一个转移目标分组
+                std::map<std::vector<int>, std::vector<int>> splitGroups;
+                
+                for (int stateId : partition) {
+                    std::vector<int> signature;
+                    
+                    // 对所有符号计算转移签名
+                    for (const auto& sym : alphabet) {
+                        int target = getTargetState(stateId, sym, dfaTransitions);
+                        int targetGroup = (target >= 0) ?  stateGroup[stateIdToIdx[target]] : -1;
+                        signature.push_back(targetGroup);
                     }
+                    
+                    splitGroups[signature].push_back(stateId);
                 }
-                splitGroups[signature].insert(stateId);
+                
+                // 如果分割出多个子组，则进行分割
+                if (splitGroups.size() > 1) {
+                    changed = true;
+                    partitionSplit = true;
+                    
+                    // 添加新分区
+                    for (auto& entry : splitGroups) {
+                        int newGrpIdx = newPartitions. size();
+                        newPartitions.push_back(entry.second);
+                        for (int state : entry.second) {
+                            stateGroup[stateIdToIdx[state]] = newGrpIdx;
+                        }
+                    }
+                    break; // 已分割，跳出符号循环
+                }
             }
-
-            if (splitGroups.size() > 1) {
-                changed = true;
-            }
-            for (const auto& entry : splitGroups) {
-                newPartitions.push_back(entry.second);
+            
+            // 如果没有分割，保持原样
+            if (!partitionSplit) {
+                newPartitions.push_back(partition);
             }
         }
-        partitions = newPartitions;
+        
+        if (changed) {
+            partitions = newPartitions;
+            // 更新 stateGroup 映射
+            for (size_t i = 0; i < partitions.size(); ++i) {
+                for (int state : partitions[i]) {
+                    stateGroup[stateIdToIdx[state]] = i;
+                }
+            }
+        }
     }
 
-    // 3. 构建最小化后的 DFA
+    // 3.  构建最小化后的 DFA
     minDfaStates.clear();
     minDfaTransitions.clear();
 
-    // Map: Old State ID -> New Partition ID
-    std::map<int, int> oldToNewMap;
+    // 找到初始状态所在的分区
+    int oldStartId = dfaStates[0].id;
+    int startPartitionIdx = stateGroup[stateIdToIdx[oldStartId]];
+
+    // 创建分区索引到新状态ID的映射
+    std::map<int, int> partitionToNewId;
+    partitionToNewId[startPartitionIdx] = 0; // 初始状态分区映射到 ID 0
     
-    // 创建新状态
+    int nextId = 1;
     for (size_t i = 0; i < partitions.size(); ++i) {
-        DFAState newState;
-        newState.id = static_cast<int>(i);
-        newState.stateName = std::to_string(i);
-        
-        // 确定是否为接受状态（只要分区里有一个原接受状态，该分区即为接受状态）
-        bool isAccepting = false;
+        if (static_cast<int>(i) != startPartitionIdx) {
+            partitionToNewId[i] = nextId++;
+        }
+    }
+
+    // 创建旧状态ID到新状态ID的映射
+    std::map<int, int> oldToNewMap;
+    for (size_t i = 0; i < partitions.size(); ++i) {
+        int newId = partitionToNewId[i];
         for (int oldId : partitions[i]) {
-            oldToNewMap[oldId] = newState.id;
-            // 检查 oldId 是否是原接受状态
-            // 这里稍微低效一点，重新查一遍原状态列表
-            for(const auto& s : dfaStates) {
-                if(s.id == oldId && s.nfaStates.count(originalNFAEndId)) {
-                    isAccepting = true; 
-                    break;
-                }
+            oldToNewMap[oldId] = newId;
+        }
+    }
+
+    // 创建新状态（按新ID排序）
+    std::vector<std::pair<int, size_t>> idToPartitionIdx; // (newId, partitionIdx)
+    for (size_t i = 0; i < partitions.size(); ++i) {
+        idToPartitionIdx.push_back({partitionToNewId[i], i});
+    }
+    std::sort(idToPartitionIdx.begin(), idToPartitionIdx.end());
+
+    // 构建新状态
+    for (const auto& pair : idToPartitionIdx) {
+        int newId = pair.first;
+        size_t partIdx = pair.second;
+        
+        DFAState newState;
+        newState.id = newId;
+        newState.stateName = std::to_string(newId);
+        
+        // 检查是否为接受状态
+        bool isAccepting = false;
+        for (int oldId : partitions[partIdx]) {
+            if (dfaStates[stateIdToIdx[oldId]].nfaStates.count(originalNFAEndId)) {
+                isAccepting = true;
+                break;
             }
         }
         
         if (isAccepting) {
-            // 标记新状态包含 NFA 终态 ID，以便 visualize.cpp 识别
-            newState.nfaStates.insert(originalNFAEndId);
+            newState.nfaStates. insert(originalNFAEndId);
         }
         
         minDfaStates.push_back(newState);
     }
 
-    // 确定初始状态
-    // 假设 dfaStates[0] 是初始状态
-    int oldStartId = dfaStates[0].id;
-    int newStartId = oldToNewMap[oldStartId];
+    // 4. 创建新转移
+    std::set<std::tuple<int, int, CharSet>> addedTransitions; // 去重
     
-    // 确保最小化 DFA 的初始状态在 vector 的第 0 位
-    if (newStartId != 0) {
-        std::swap(minDfaStates[0], minDfaStates[newStartId]);
-        // 更新映射关系（简单的 ID 交换可能不够，这里仅交换 vector 位置）
-        // 为了保持 ID 一致性，最好在生成 newState 时就处理，
-        // 但最简单的方法是后续绘图时指明 start，或者在这里做一个重新编号。
-        // 为了简单，我们让 generateDotFile 总是把 vector[0] 当作 start。
-        // 需要修正 minDfaStates[0].id 
-        int tempId = minDfaStates[0].id;
-        minDfaStates[0].id = minDfaStates[newStartId].id;
-        minDfaStates[newStartId].id = tempId;
-        
-        // 重新建立 oldToNewMap 指向正确的 vector index
-        for(size_t i=0; i<partitions.size(); ++i) {
-            for(int old : partitions[i]) {
-                if (static_cast<int>(i) == newStartId) oldToNewMap[old] = 0;
-                else if (static_cast<int>(i) == 0) oldToNewMap[old] = newStartId;
-                else oldToNewMap[old] = static_cast<int>(i);
-            }
-        }
-    }
-
-    // 创建新转移
-    // 对于每个分区，取出一个代表状态，查看其转移
     for (size_t i = 0; i < partitions.size(); ++i) {
         if (partitions[i].empty()) continue;
-        int representative = *partitions[i].begin();
-        int fromNewId = oldToNewMap[representative]; // 应该是 i 或被交换过的值
+        
+        // 取代表状态
+        int representative = partitions[i][0];
+        int fromNewId = oldToNewMap[representative];
 
-        // 遍历字母表检查转移
+        // 遍历所有输入符号
         for (const auto& symbol : alphabet) {
             int oldTarget = getTargetState(representative, symbol, dfaTransitions);
-            if (oldTarget != -1) {
+            if (oldTarget >= 0) {
                 int toNewId = oldToNewMap[oldTarget];
                 
-                // 检查是否已经存在相同的转移（避免重复）
-                bool exists = false;
-                for(const auto& t : minDfaTransitions) {
-                    if(t.fromStateId == fromNewId && t.toStateId == toNewId && t.transitionSymbol == symbol) {
-                        exists = true; break;
-                    }
-                }
-                if(!exists) {
+                // 去重检查
+                auto transKey = std::make_tuple(fromNewId, toNewId, symbol);
+                if (addedTransitions.find(transKey) == addedTransitions.end()) {
                     minDfaTransitions.push_back({fromNewId, toNewId, symbol});
+                    addedTransitions. insert(transKey);
                 }
             }
         }
