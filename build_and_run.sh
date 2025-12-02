@@ -20,10 +20,10 @@ cmake ..
 # 编译项目
 echo ""
 echo "=== 步骤 2: 编译项目 ==="
-cmake --build .  
+cmake --build .   
 
 # 将生成的可执行文件复制到根目录
-cp regex_automata ..  
+cp regex_automata ..   
 cd ..
 
 echo ""
@@ -35,7 +35,7 @@ echo ""
 echo "==========================================="
 echo "  选择运行模式"
 echo "==========================================="
-echo "  1. 预定义词法分析器 (lang.l tokens)"
+echo "  1. 预定义词法分析器 (lang. l tokens)"
 echo "  2. 自定义词法分析器 (定义您自己的 tokens)"
 echo "  3. 单个正则表达式转换 (Regex -> NFA -> DFA)"
 echo ""
@@ -93,7 +93,7 @@ case $mode_choice in
         chmod +x ./regex_automata
         (cat /tmp/lexer_input. txt; cat) | ./regex_automata 2
         
-        rm -f /tmp/lexer_input.txt
+        rm -f /tmp/lexer_input. txt
         
         if [ -f "custom_lexer_dfa.dot" ]; then
             echo ""
@@ -165,7 +165,7 @@ case $mode_choice in
                 if [ -f "$nfa_dot" ]; then
                     echo "  正在生成 NFA 图片..."
                     # 使用 || true 确保即使失败也继续
-                    dot -Tpng "$nfa_dot" -o "$folder_name/nfa.png" && {
+                    dot -Tpng "$nfa_dot" -o "$folder_name/nfa. png" && {
                         echo "  ✓ NFA:     $folder_name/nfa.png"
                         ((png_generated++))
                     } || {

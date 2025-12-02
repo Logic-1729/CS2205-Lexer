@@ -20,7 +20,7 @@ std::string normalizePath(const std::string& path) {
     
     // 移除开头和结尾的空格
     while (!result.empty() && std::isspace(static_cast<unsigned char>(result. front()))) {
-        result. erase(result.begin());
+        result.erase(result.begin());
     }
     while (!result.empty() && std::isspace(static_cast<unsigned char>(result.back()))) {
         result.pop_back();
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     if (argc > 1) {
         try {
             choice = std::stoi(argv[1]);
-        } catch (...) {
+        } catch (... ) {
             choice = 0;
         }
     }
@@ -215,24 +215,42 @@ void runLexerMode() {
         lexer.addTokenClass(name, regex);
     }
     
+    std::cout << "\nBuilding lexer with " << lexer.getTokenClasses().size() << " token types...\n";
     lexer.build();
+    
     lexer.generateDotFile("custom_lexer_dfa.dot");
+    std::cout << "\nGenerated: custom_lexer_dfa.dot\n";
     
     std::cout << "\n=== Tokenization ===\n";
-    std::cout << "Enter input (or 'quit' to exit):\n";
+    std::cout << "Enter input to analyze (or 'quit' to exit):\n";
     
     std::string input;
     while (true) {
         std::cout << "\n> ";
         if (!std::getline(std::cin, input)) break;
-        if (input == "quit") break;
+        if (input == "quit" || input == "exit") break;
+        
+        if (input.empty()) continue;
         
         try {
             auto tokens = lexer.tokenize(input);
+            
+            std::cout << "\nTokens:\n";
+            std::cout << "┌──────┬────────┬──────────────────┬────────────────────────┐\n";
+            std::cout << "│ Line │ Column │ Token Type       │ Lexeme                 │\n";
+            std::cout << "├──────┼────────┼──────────────────┼────────────────────────┤\n";
+            
             for (const auto& token : tokens) {
-                std::cout << "[" << token.line << ":" << token.column << "] "
-                         << token.tokenClassName << " \"" << token.lexeme << "\"\n";
+                std::cout << "│ " << std::setw(4) << token.line 
+                         << " │ " << std::setw(6) << token.column
+                         << " │ " << std::setw(16) << std::left << token.tokenClassName
+                         << " │ " << std::setw(22) << ("\"" + token.lexeme + "\"")
+                         << " │\n";
             }
+            
+            std::cout << "└──────┴────────┴──────────────────┴────────────────────────┘\n";
+            std::cout << "Total: " << tokens.size() << " tokens\n";
+            
         } catch (const std::exception& e) {
             std::cerr << "Error: " << e.what() << "\n";
         }
@@ -286,7 +304,7 @@ void runSingleRegexMode(const std::string& outputDir) {
         std::cout << "\n=== Original DFA ===" << std::endl;
         displayDFA(dfaStates, dfaTransitions, originalNFAEndId);
         
-        std::string dfaPath = joinPath(normalizedDir, "dfa_graph.dot");
+        std::string dfaPath = joinPath(normalizedDir, "dfa_graph. dot");
         generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEndId, dfaPath);
         std::cout << "Generated: " << dfaPath << std::endl;
 
