@@ -8,14 +8,14 @@
 
 void Lexer::addTokenClass(const std::string& name, const std::string& regex) {
     TokenClass tc;
-    tc.id = tokenClasses_. size();
+    tc.id = tokenClasses_.size();
     tc.name = name;
     tc.regex = regex;
     tokenClasses_.push_back(tc);
 }
 
 /**
- * 初始化预定义的 Token 类型（基于 lang. l）
+ * 初始化预定义的 Token 类型（基于 lang.l）
  */
 void Lexer::initializeDefaultTokenClasses() {
     // 注意：顺序决定优先级！关键字必须在标识符之前
@@ -46,21 +46,23 @@ void Lexer::initializeDefaultTokenClasses() {
     addTokenClass("TM_MULEQ", "\"*=\"");
     addTokenClass("TM_DIVEQ", "\"/=\"");
     
-    // 浮点数（必须在整数之前，优先级更高）
-    // 支持：123. 456, . 456, 123., 123e10, 123. 456e-10, . 456e10
+    // 浮点数（必须在整数之前）
+    // 修正说明：移除了之前正则表达式中意外引入的空格
+    // 格式1: digits.digits[exponent]  -> [0-9]+"."[0-9]*...
+    // 格式2: .digits[exponent]        -> "."[0-9]+...
+    // 格式3: digits exponent          -> [0-9]+exponent...
     addTokenClass("TM_FLOAT", 
-        "((\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+\".\"(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")*((\"e\"|\"E\")(\"+\"|\"-\")?(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+)?|"
-        "\".\"(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+((\"e\"|\"E\")(\"+\"|\"-\")?(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+)?|"
-        "(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+\".\"|"
-        "(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+(\"e\"|\"E\")(\"+\"|\"-\")?(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+)");
+        "(([0-9]+\".\"[0-9]*((\"e\"|\"E\")(\"+\"|\"-\")?[0-9]+)?)|"
+        "(\".\"[0-9]+((\"e\"|\"E\")(\"+\"|\"-\")?[0-9]+)?)|"
+        "([0-9]+((\"e\"|\"E\")(\"+\"|\"-\")?[0-9]+)))");
+
+    // 整数（使用字符类简化）
+    addTokenClass("TM_NAT", "[0-9]+");
     
-    // 整数（优先级低于浮点数）
-    addTokenClass("TM_NAT", "(\"0\"|((\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")*))");
-    
-    // 标识符（优先级较低）
+    // 标识符
     addTokenClass("TM_IDENT", "([_A-Za-z][_A-Za-z0-9]*)");
     
-    // 单字符运算符（优先级低于多字符运算符）
+    // 单字符运算符
     addTokenClass("TM_SEMICOL", "\";\"");
     addTokenClass("TM_LEFT_PAREN", "\"(\"");
     addTokenClass("TM_RIGHT_PAREN", "\")\"");
@@ -74,11 +76,11 @@ void Lexer::initializeDefaultTokenClasses() {
     addTokenClass("TM_LT", "\"<\"");
     addTokenClass("TM_GT", "\">\"");
     addTokenClass("TM_ASGNOP", "\"=\"");
-    addTokenClass("TM_NOT", "\"! \"");
+    addTokenClass("TM_NOT", "\"!\"");
     addTokenClass("TM_AMPERSAND", "\"&\"");
     addTokenClass("TM_COMMA", "\",\"");
     
-    // 空白字符（通常在分析时跳过）
+    // 空白字符
     addTokenClass("TM_BLANK", "(\" \"|\"\\t\"|\"\\n\"|\"\\r\")");
 }
 
@@ -106,10 +108,10 @@ void Lexer::build() {
             // 预处理正则表达式
             auto tokens = preprocessRegex(tc.regex);
             
-            // 简化正则表达式（将 + 和 ?  转换为基本操作）
+            // 简化正则表达式
             auto simplifiedTokens = simplifyRegex(tokens);
             
-            // 插入连接符（在简化之后）
+            // 插入连接符
             auto tokensWithConcat = insertConcatSymbols(simplifiedTokens);
             
             // 转换为后缀表达式
@@ -139,8 +141,8 @@ void Lexer::build() {
         CharSet epsilon;
         epsilon.isEpsilon = true;
         mergedNFA.edges.push_back({mergedStart, nfas[i].start, epsilon});
-        mergedNFA.edges.insert(mergedNFA.edges. end(), 
-                               nfas[i].edges. begin(), 
+        mergedNFA.edges.insert(mergedNFA.edges.end(), 
+                               nfas[i].edges.begin(), 
                                nfas[i].edges.end());
     }
     
@@ -150,7 +152,7 @@ void Lexer::build() {
     buildDFAFromNFA(mergedNFA, dfaStates_, dfaTransitions_);
     
     // Step 4: 标记接受状态
-    acceptStateToTokenClasses_. clear();
+    acceptStateToTokenClasses_.clear();
     
     for (const auto& dfaState : dfaStates_) {
         std::vector<int> matchedTokenClasses;
@@ -161,7 +163,7 @@ void Lexer::build() {
             }
         }
         
-        if (! matchedTokenClasses.empty()) {
+        if (!matchedTokenClasses.empty()) {
             std::sort(matchedTokenClasses.begin(), matchedTokenClasses.end());
             acceptStateToTokenClasses_[dfaState.id] = matchedTokenClasses;
         }
@@ -184,7 +186,7 @@ int Lexer::getTokenClassForState(int stateId) const {
 
 std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
     if (!isBuilt_) {
-        throw std::runtime_error("Lexer not built.  Call build() first.");
+        throw std::runtime_error("Lexer not built. Call build() first.");
     }
     
     std::vector<LexerToken> tokens;
@@ -192,7 +194,6 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
     int line = 1, column = 1;
     
     while (pos < input.length()) {
-        // 从当前位置开始进行最长匹配
         int currentState = 0;
         int lastAcceptPos = -1;
         int lastAcceptTokenClass = -1;
@@ -202,10 +203,9 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
         while (i < input.length()) {
             char c = input[i];
             
-            // 查找转移
             int nextState = -1;
             for (const auto& trans : dfaTransitions_) {
-                if (trans.fromStateId == currentState && trans.transitionSymbol. match(c)) {
+                if (trans.fromStateId == currentState && trans.transitionSymbol.match(c)) {
                     nextState = trans.toStateId;
                     break;
                 }
@@ -218,7 +218,6 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
             currentState = nextState;
             i++;
             
-            // 检查是否为接受状态
             int tokenClassId = getTokenClassForState(currentState);
             if (tokenClassId >= 0) {
                 lastAcceptPos = i;
@@ -229,7 +228,6 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
         if (lastAcceptPos > static_cast<int>(pos)) {
             std::string lexeme = input.substr(pos, lastAcceptPos - pos);
             
-            // 跳过空白符（TM_BLANK）
             if (tokenClasses_[lastAcceptTokenClass].name != "TM_BLANK") {
                 LexerToken token;
                 token.lexeme = lexeme;
@@ -240,7 +238,6 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
                 tokens.push_back(token);
             }
             
-            // 更新行列号
             for (size_t j = pos; j < static_cast<size_t>(lastAcceptPos); ++j) {
                 if (input[j] == '\n') {
                     line++;
@@ -252,7 +249,6 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
             
             pos = lastAcceptPos;
         } else {
-            // 词法错误
             std::string errorContext = input.substr(pos, std::min(size_t(20), input.length() - pos));
             throw std::runtime_error(
                 "Lexical error at line " + std::to_string(line) + 
@@ -268,14 +264,14 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
 
 void Lexer::displayDFA() const {
     std::cout << "\n=== Lexer DFA Info ===" << std::endl;
-    std::cout << "Total States: " << dfaStates_. size() << std::endl;
+    std::cout << "Total States: " << dfaStates_.size() << std::endl;
     std::cout << "Total Transitions: " << dfaTransitions_.size() << std::endl;
     
     std::cout << "\nAccept States (showing first 20):" << std::endl;
     int count = 0;
     for (const auto& [stateId, tokenClassIds] : acceptStateToTokenClasses_) {
         if (count++ >= 20) {
-            std::cout << "  ...  and " << (acceptStateToTokenClasses_.size() - 20) << " more" << std::endl;
+            std::cout << "  ... and " << (acceptStateToTokenClasses_.size() - 20) << " more" << std::endl;
             break;
         }
         std::cout << "  State " << stateId << " -> ";
@@ -285,7 +281,7 @@ void Lexer::displayDFA() const {
             if (i == 0) std::cout << " (priority)";
         }
         if (tokenClassIds.size() > 3) {
-            std::cout << " ...  (+" << (tokenClassIds.size() - 3) << " more)";
+            std::cout << " ... (+" << (tokenClassIds.size() - 3) << " more)";
         }
         std::cout << std::endl;
     }
@@ -301,30 +297,26 @@ void Lexer::generateDotFile(const std::string& filename) const {
     file << "  rankdir=LR;\n";
     file << "  node [shape=circle, fontsize=10];\n";
     
-    // 初始状态
-    if (! dfaStates_.empty()) {
+    if (!dfaStates_.empty()) {
         file << "  __start [shape=none, label=\"\"];\n";
         file << "  __start -> " << dfaStates_[0].id << ";\n";
     }
     
-    // 接受状态
     for (const auto& [stateId, tokenClassIds] : acceptStateToTokenClasses_) {
         file << "  " << stateId << " [shape=doublecircle, label=\"" << stateId;
         if (!tokenClassIds.empty()) {
             std::string name = tokenClasses_[tokenClassIds[0]].name;
-            // 简化标签
             if (name.length() > 15) {
-                name = name. substr(0, 12) + "...";
+                name = name.substr(0, 12) + "...";
             }
             file << "\\n" << name;
         }
         file << "\"];\n";
     }
     
-    // 聚合转移边
     std::map<std::pair<int, int>, std::vector<std::string>> aggregated;
     for (const auto& trans : dfaTransitions_) {
-        aggregated[{trans.fromStateId, trans.toStateId}]. push_back(trans.transitionSymbol.toString());
+        aggregated[{trans.fromStateId, trans.toStateId}].push_back(trans.transitionSymbol.toString());
     }
     
     for (const auto& [key, labels] : aggregated) {
