@@ -7,18 +7,88 @@
 #include <string>
 #include <vector>
 #include <iomanip>
+#include <sys/stat.h>
 
-// 函数声明更新，增加输出目录参数
+// 函数声明
 void runLexerMode();
 void runSingleRegexMode(const std::string& outputDir);
 void runPredefinedLexerMode();
 
+// 辅助函数：规范化路径
+std::string normalizePath(const std::string& path) {
+    std::string result = path;
+    
+    // 移除开头和结尾的空格
+    while (!result.empty() && std::isspace(static_cast<unsigned char>(result. front()))) {
+        result. erase(result.begin());
+    }
+    while (!result.empty() && std::isspace(static_cast<unsigned char>(result.back()))) {
+        result.pop_back();
+    }
+    
+    // 移除开头的 ". /"
+    if (result.size() >= 2 && result[0] == '.' && result[1] == '/') {
+        result = result.substr(2);
+    }
+    
+    // 移除末尾的斜杠
+    while (!result.empty() && (result.back() == '/' || result.back() == '\\')) {
+        result.pop_back();
+    }
+    
+    // 如果为空或只有"."，返回当前目录
+    if (result.empty() || result == ".") {
+        return ".";
+    }
+    
+    return result;
+}
+
+// 辅助函数：拼接路径
+std::string joinPath(const std::string& dir, const std::string& filename) {
+    std::string normalizedDir = normalizePath(dir);
+    
+    // 如果是当前目录，直接返回文件名
+    if (normalizedDir == ".") {
+        return filename;
+    }
+    
+    // 否则拼接目录和文件名
+    return normalizedDir + "/" + filename;
+}
+
+// 辅助函数：确保目录存在
+bool ensureDirectoryExists(const std::string& path) {
+    std::string normalizedPath = normalizePath(path);
+    
+    // 当前目录总是存在
+    if (normalizedPath == ".") {
+        return true;
+    }
+    
+    struct stat info;
+    if (stat(normalizedPath.c_str(), &info) != 0) {
+        // 目录不存在，尝试创建
+        #ifdef _WIN32
+            int result = _mkdir(normalizedPath.c_str());
+        #else
+            int result = mkdir(normalizedPath.c_str(), 0755);
+        #endif
+        
+        if (result == 0) {
+            std::cout << "Created directory: " << normalizedPath << std::endl;
+            return true;
+        }
+        return false;
+    }
+    return (info.st_mode & S_IFDIR) != 0;
+}
+
 int main(int argc, char* argv[]) {
-    // 默认参数
     int choice = 0;
     std::string outputDir = ".";
 
-    // 1. 尝试从命令行参数读取模式 (argv[1])
+    // 从命令行参数读取模式
     if (argc > 1) {
         try {
             choice = std::stoi(argv[1]);
@@ -27,12 +97,12 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // 2. 尝试从命令行参数读取输出目录 (argv[2])，仅用于模式 3
+    // 从命令行参数读取输出目录
     if (argc > 2) {
         outputDir = argv[2];
     }
 
-    // 如果没有通过命令行指定模式，则显示交互菜单
+    // 如果没有指定模式，显示菜单
     if (choice == 0) {
         std::cout << "===========================================\n";
         std::cout << "  CS2205 Lexical Analyzer\n";
@@ -41,11 +111,11 @@ int main(int argc, char* argv[]) {
         std::cout << "Select mode:\n";
         std::cout << "  1. Predefined Lexer (lang.l tokens)\n";
         std::cout << "  2. Custom Lexer (define your own tokens)\n";
-        std::cout << "  3. Single Regex (Regex -> NFA -> DFA)\n";
+        std::cout << "  3.  Single Regex (Regex -> NFA -> DFA)\n";
         std::cout << "Enter choice (1-3): ";
         
         if (!(std::cin >> choice)) return 0;
-        std::cin.ignore(); // 清除换行符
+        std::cin.ignore();
     }
 
     try {
@@ -82,20 +152,17 @@ void runPredefinedLexerMode() {
     
     std::cout << "\nBuilding lexer with " << lexer.getTokenClasses().size() << " token types...\n";
     lexer.build();
-    // lexer.displayDFA(); // 可选：减少输出干扰
     
-    // 生成可视化
     lexer.generateDotFile("lexer_dfa.dot");
     std::cout << "\nGenerated: lexer_dfa.dot\n";
     
-    // 词法分析
     std::cout << "\n=== Tokenization ===\n";
     std::cout << "Enter code to analyze (or 'quit' to exit):\n";
     
     std::string input;
     while (true) {
         std::cout << "\n> ";
-        if (!std::getline(std::cin, input)) break; // 检测 EOF
+        if (! std::getline(std::cin, input)) break;
         if (input == "quit" || input == "exit") break;
         
         if (input.empty()) continue;
@@ -104,10 +171,9 @@ void runPredefinedLexerMode() {
             auto tokens = lexer.tokenize(input);
             
             std::cout << "\nTokens:\n";
-            // 简单的表格边框
-            std::cout << "┌──────┬────────┬──────────────────┬──────────────────────┐\n";
+            std::cout << "┌──────┬────────┬──────────────────┬────────────────────────┐\n";
             std::cout << "│ Line │ Column │ Token Type       │ Lexeme                 │\n";
-            std::cout << "├──────┼────────┼──────────────────┼──────────────────────┤\n";
+            std::cout << "├──────┼────────┼──────────────────┼────────────────────────┤\n";
             
             for (const auto& token : tokens) {
                 std::cout << "│ " << std::setw(4) << token.line 
@@ -117,7 +183,7 @@ void runPredefinedLexerMode() {
                          << " │\n";
             }
             
-            std::cout << "└──────┴────────┴──────────────────┴──────────────────────┘\n";
+            std::cout << "└──────┴────────┴──────────────────┴────────────────────────┘\n";
             std::cout << "Total: " << tokens.size() << " tokens\n";
             
         } catch (const std::exception& e) {
@@ -131,7 +197,6 @@ void runLexerMode() {
     
     Lexer lexer;
     
-    // 注意：如果通过脚本管道输入，这些提示用户可能看不到，但这不影响程序运行
     std::cout << "Enter number of token classes: ";
     int n;
     if (!(std::cin >> n)) return;
@@ -151,7 +216,6 @@ void runLexerMode() {
     }
     
     lexer.build();
-    // lexer.displayDFA();
     lexer.generateDotFile("custom_lexer_dfa.dot");
     
     std::cout << "\n=== Tokenization ===\n";
@@ -160,7 +224,7 @@ void runLexerMode() {
     std::string input;
     while (true) {
         std::cout << "\n> ";
-        if (!std::getline(std::cin, input)) break; // 检测 EOF
+        if (!std::getline(std::cin, input)) break;
         if (input == "quit") break;
         
         try {
@@ -176,54 +240,72 @@ void runLexerMode() {
 }
 
 void runSingleRegexMode(const std::string& outputDir) {
+    // 规范化输出目录
+    std::string normalizedDir = normalizePath(outputDir);
+    
     std::cout << "\n=== Single Regex Mode ===\n";
-    std::cout << "Output Directory: " << outputDir << "\n";
+    std::cout << "Output Directory: " << normalizedDir << "\n";
+    
+    // 确保输出目录存在
+    if (!ensureDirectoryExists(normalizedDir)) {
+        std::cerr << "ERROR: Could not create output directory: " << normalizedDir << "\n";
+        return;
+    }
+    
     std::cout << "Enter regular expression: ";
     
     std::string regularExpression;
     if (!std::getline(std::cin, regularExpression)) return;
 
-    // 简单的路径拼接助手
-    auto getPath = [&](const std::string& file) {
-        // 移除 outputDir 末尾的斜杠（如果有）
-        std::string dir = outputDir;
-        if (!dir.empty() && dir.back() == '/') dir.pop_back();
-        return dir + "/" + file;
-    };
+    try {
+        // Step 1: 预处理
+        auto tokens = preprocessRegex(regularExpression);
+        auto tokensWithConcat = insertConcatSymbols(tokens);
+        
+        // Step 2: 转后缀
+        InfixToPostfix converter(tokensWithConcat);
+        converter.convert();
+        const auto& postfix = converter.getPostfix();
 
-    auto tokens = preprocessRegex(regularExpression);
-    auto tokensWithConcat = insertConcatSymbols(tokens);
-    
-    InfixToPostfix converter(tokensWithConcat);
-    converter.convert();
-    const auto& postfix = converter.getPostfix();
+        // Step 3: 构建 NFA
+        NFAUnit nfa = regexToNFA(postfix);
+        
+        std::cout << "\n=== NFA ===" << std::endl;
+        displayNFA(nfa);
+        
+        std::string nfaPath = joinPath(normalizedDir, "nfa_graph.dot");
+        generateDotFile_NFA(nfa, nfaPath);
+        std::cout << "Generated: " << nfaPath << std::endl;
 
-    NFAUnit nfa = regexToNFA(postfix);
-    
-    std::cout << "\n=== NFA ===" << std::endl;
-    displayNFA(nfa);
-    std::string nfaPath = getPath("nfa_graph.dot");
-    generateDotFile_NFA(nfa, nfaPath);
-    std::cout << "Generated: " << nfaPath << std::endl;
+        // Step 4: NFA 转 DFA
+        std::vector<DFAState> dfaStates;
+        std::vector<DFATransition> dfaTransitions;
+        buildDFAFromNFA(nfa, dfaStates, dfaTransitions);
+        int originalNFAEndId = nfa.end->id;
 
-    std::vector<DFAState> dfaStates;
-    std::vector<DFATransition> dfaTransitions;
-    buildDFAFromNFA(nfa, dfaStates, dfaTransitions);
-    int originalNFAEndId = nfa.end->id;
+        std::cout << "\n=== Original DFA ===" << std::endl;
+        displayDFA(dfaStates, dfaTransitions, originalNFAEndId);
+        
+        std::string dfaPath = joinPath(normalizedDir, "dfa_graph.dot");
+        generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEndId, dfaPath);
+        std::cout << "Generated: " << dfaPath << std::endl;
 
-    std::cout << "\n=== DFA ===" << std::endl;
-    displayDFA(dfaStates, dfaTransitions, originalNFAEndId);
-    std::string dfaPath = getPath("dfa_graph.dot");
-    generateDotFile_DFA(dfaStates, dfaTransitions, originalNFAEndId, dfaPath);
-    std::cout << "Generated: " << dfaPath << std::endl;
+        // Step 5: DFA 最小化
+        std::vector<DFAState> minDfaStates;
+        std::vector<DFATransition> minDfaTransitions;
+        minimizeDFA(dfaStates, dfaTransitions, originalNFAEndId, minDfaStates, minDfaTransitions);
 
-    std::vector<DFAState> minDfaStates;
-    std::vector<DFATransition> minDfaTransitions;
-    minimizeDFA(dfaStates, dfaTransitions, originalNFAEndId, minDfaStates, minDfaTransitions);
-
-    std::cout << "\n=== Minimized DFA ===" << std::endl;
-    displayDFA(minDfaStates, minDfaTransitions, originalNFAEndId);
-    std::string minDfaPath = getPath("min_dfa_graph.dot");
-    generateDotFile_DFA(minDfaStates, minDfaTransitions, originalNFAEndId, minDfaPath);
-    std::cout << "Generated: " << minDfaPath << std::endl;
+        std::cout << "\n=== Minimized DFA ===" << std::endl;
+        displayDFA(minDfaStates, minDfaTransitions, originalNFAEndId);
+        
+        std::string minDfaPath = joinPath(normalizedDir, "min_dfa_graph.dot");
+        generateDotFile_DFA(minDfaStates, minDfaTransitions, originalNFAEndId, minDfaPath);
+        std::cout << "Generated: " << minDfaPath << std::endl;
+        
+        std::cout << "\n✓ All files saved to: " << normalizedDir << std::endl;
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error during regex processing: " << e.what() << "\n";
+        throw;
+    }
 }

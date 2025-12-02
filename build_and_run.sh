@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 确保脚本抛出错误时停止执行
+# 只在命令明确失败时停止（但允许继续生成图片）
 set -e
 
 echo "==========================================="
@@ -20,11 +20,11 @@ cmake ..
 # 编译项目
 echo ""
 echo "=== 步骤 2: 编译项目 ==="
-cmake --build .
+cmake --build .  
 
 # 将生成的可执行文件复制到根目录
-cp regex_automata ..
-cd .. 
+cp regex_automata ..  
+cd ..
 
 echo ""
 echo "✓ 编译成功！"
@@ -47,12 +47,9 @@ case $mode_choice in
         echo "=== 模式 1: 预定义词法分析器 ==="
         echo ""
         
-        # 交互式运行
         chmod +x ./regex_automata
-        # 【修正】直接运行，不使用管道，以支持交互
         ./regex_automata 1
         
-        # 生成 DFA 可视化
         if [ -f "lexer_dfa.dot" ]; then
             echo ""
             echo "=== 生成可视化图片 ==="
@@ -60,8 +57,7 @@ case $mode_choice in
                 dot -Tpng lexer_dfa.dot -o lexer_dfa.png
                 echo "✓ 生成: lexer_dfa.png"
             else
-                echo "⚠ 警告: 未找到 'dot' 命令，无法生成 PNG 图片。"
-                echo "  请安装 Graphviz: sudo apt-get install graphviz"
+                echo "⚠ 警告: 未找到 'dot' 命令。"
             fi
         fi
         ;;
@@ -71,20 +67,15 @@ case $mode_choice in
         echo "=== 模式 2: 自定义词法分析器 ==="
         echo ""
         
-        # 询问 token 类型数量
         read -p "请输入 token 类型数量: " token_count
         
-        # 校验输入
-        if ! [[ "$token_count" =~ ^[0-9]+$ ]]; then
+        if !  [[ "$token_count" =~ ^[0-9]+$ ]]; then
             echo "❌ 错误: 请输入有效的数字。"
             exit 1
         fi
         
-        # 准备输入数据 (Token 数量)
-        # 【修正】不再写入 "2" (模式选择已通过参数传递)
         echo "$token_count" > /tmp/lexer_input.txt
         
-        # 收集每个 token 的定义
         for ((i=1; i<=token_count; i++))
         do
             echo ""
@@ -92,33 +83,24 @@ case $mode_choice in
             read -r -p "  名称 (如 IDENTIFIER): " token_name
             read -r -p "  正则表达式 (如 [a-z]+): " token_regex
             
-            echo "$token_name" >> /tmp/lexer_input.txt
+            echo "$token_name" >> /tmp/lexer_input. txt
             echo "$token_regex" >> /tmp/lexer_input.txt
         done
-        
-        # 【修正】不写入 "quit"，以便后续转入交互模式
         
         echo ""
         echo "--- 配置完成，进入交互模式 ---"
         
-        # 运行程序
         chmod +x ./regex_automata
-        # 【修正】将配置文件和当前 stdin (cat) 拼接后传给程序
-        # 这样程序先读配置，再读取用户键盘输入
-        (cat /tmp/lexer_input.txt; cat) | ./regex_automata 2
+        (cat /tmp/lexer_input. txt; cat) | ./regex_automata 2
         
-        # 清理临时文件
         rm -f /tmp/lexer_input.txt
         
-        # 生成可视化
         if [ -f "custom_lexer_dfa.dot" ]; then
             echo ""
             echo "=== 生成可视化图片 ==="
             if command -v dot &> /dev/null; then
-                dot -Tpng custom_lexer_dfa.dot -o custom_lexer_dfa.png
+                dot -Tpng custom_lexer_dfa. dot -o custom_lexer_dfa.png
                 echo "✓ 生成: custom_lexer_dfa.png"
-            else
-                echo "⚠ 警告: 未找到 'dot' 命令。"
             fi
         fi
         ;;
@@ -128,16 +110,13 @@ case $mode_choice in
         echo "=== 模式 3: 单个正则表达式转换 ==="
         echo ""
         
-        # 询问要处理的正则表达式个数
         read -p "请输入要处理的正则表达式个数: " count
         
-        # 校验输入
         if ! [[ "$count" =~ ^[0-9]+$ ]]; then
             echo "❌ 错误: 请输入有效的数字。"
             exit 1
         fi
         
-        # 循环处理每个正则表达式
         for ((i=1; i<=count; i++))
         do
             echo ""
@@ -145,32 +124,36 @@ case $mode_choice in
             echo "  正在处理第 $i 个正则表达式 (共 $count 个)"
             echo "================================================"
             
-            # 读取正则表达式 (保留反斜杠)
             read -r -p "请输入正则表达式: " regex_input
             
-            # 设置文件夹名 (清理特殊字符但保留反斜杠)
-            folder_name=$(echo "$regex_input" | sed 's/[\/\*\? ]/_/g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            folder_name=$(echo "$regex_input" | sed 's/[\/:]/_/g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
-            # 限制文件夹名长度
-            if [ ${#folder_name} -gt 50 ]; then
-                folder_name="${folder_name:0:47}..."
+            if [ ${#folder_name} -gt 100 ]; then
+                folder_name="${folder_name:0:97}..."
             fi
             
-            # 如果为空，使用默认名
             if [ -z "$folder_name" ]; then
                 folder_name="regex_task_$i"
             fi
             
             echo ""
             echo "→ 输出目录: $folder_name"
-            mkdir -p "./$folder_name"
+            echo "  原始表达式: $regex_input"
             
-            # 运行 C++ 程序
+            # 如果目录已存在，先删除旧文件
+            if [ -d "$folder_name" ]; then
+                echo "  清理旧文件..."
+                rm -f "$folder_name"/*.png "$folder_name"/*.dot 2>/dev/null || true
+            fi
+            
+            # 创建输出目录
+            mkdir -p "$folder_name"
+            
+            # 运行程序
             chmod +x ./regex_automata
-            # 【修正】通过参数传递模式 3 和输出目录
-            echo "$regex_input" | ./regex_automata 3 "./$folder_name"
+            echo "$regex_input" | ./regex_automata 3 "$folder_name"
             
-            # 生成图片
+            # 生成图片 - 关键：使用 || true 防止失败时退出
             echo ""
             echo "=== 生成可视化图片 ==="
             
@@ -178,36 +161,72 @@ case $mode_choice in
                 png_generated=0
                 
                 # NFA
-                if [ -f "./$folder_name/nfa_graph.dot" ]; then
-                    dot -Tpng "./$folder_name/nfa_graph.dot" -o "./$folder_name/nfa.png"
-                    echo "  ✓ NFA:  ./$folder_name/nfa.png"
-                    ((png_generated++))
+                nfa_dot="$folder_name/nfa_graph.dot"
+                if [ -f "$nfa_dot" ]; then
+                    echo "  正在生成 NFA 图片..."
+                    # 使用 || true 确保即使失败也继续
+                    dot -Tpng "$nfa_dot" -o "$folder_name/nfa.png" && {
+                        echo "  ✓ NFA:     $folder_name/nfa.png"
+                        ((png_generated++))
+                    } || {
+                        echo "  ✗ NFA 生成失败"
+                    }
+                else
+                    echo "  ✗ 未找到: $nfa_dot"
                 fi
 
-                # Original DFA
-                if [ -f "./$folder_name/dfa_graph.dot" ]; then
-                    dot -Tpng "./$folder_name/dfa_graph.dot" -o "./$folder_name/dfa.png"
-                    echo "  ✓ DFA:  ./$folder_name/dfa.png"
-                    ((png_generated++))
+                # DFA
+                dfa_dot="$folder_name/dfa_graph.dot"
+                if [ -f "$dfa_dot" ]; then
+                    echo "  正在生成 DFA 图片..."
+                    dot -Tpng "$dfa_dot" -o "$folder_name/dfa.png" && {
+                        echo "  ✓ DFA:     $folder_name/dfa.png"
+                        ((png_generated++))
+                    } || {
+                        echo "  ✗ DFA 生成失败"
+                    }
+                else
+                    echo "  ✗ 未找到: $dfa_dot"
                 fi
 
-                # Minimized DFA
-                if [ -f "./$folder_name/min_dfa_graph.dot" ]; then
-                    dot -Tpng "./$folder_name/min_dfa_graph.dot" -o "./$folder_name/min_dfa.png"
-                    echo "  ✓ Min-DFA: ./$folder_name/min_dfa.png"
-                    ((png_generated++))
+                # Min-DFA
+                min_dfa_dot="$folder_name/min_dfa_graph.dot"
+                if [ -f "$min_dfa_dot" ]; then
+                    echo "  正在生成最小化 DFA 图片..."
+                    dot -Tpng "$min_dfa_dot" -o "$folder_name/min_dfa.png" && {
+                        echo "  ✓ Min-DFA: $folder_name/min_dfa.png"
+                        ((png_generated++))
+                    } || {
+                        echo "  ✗ Min-DFA 生成失败"
+                    }
+                else
+                    echo "  ✗ 未找到: $min_dfa_dot"
                 fi
                 
+                echo ""
                 if [ $png_generated -eq 0 ]; then
-                    echo "  ⚠ 未找到 .dot 文件 (检查程序输出目录是否正确)"
+                    echo "  ⚠ 未生成任何图片"
+                elif [ $png_generated -eq 3 ]; then
+                    echo "  ✓ 成功生成全部 3 个图片"
+                else
+                    echo "  ⚠ 部分成功: 生成 $png_generated / 3 个图片"
                 fi
             else
-                echo "  ⚠ 警告: 未找到 'dot' 命令，无法生成 PNG 图片。"
-                echo "  安装方法: sudo apt-get install graphviz"
+                echo "  ⚠ 警告: 未找到 'dot' 命令"
+                echo "  安装方法:"
+                echo "    Ubuntu/Debian: sudo apt-get install graphviz"
+                echo "    macOS:         brew install graphviz"
             fi
             
             echo ""
             echo "✓ 完成: $regex_input"
+            echo "  文件位置: $folder_name/"
+            
+            # 列出生成的文件
+            if [ -d "$folder_name" ]; then
+                echo "  生成的文件:"
+                ls -lh "$folder_name/" 2>/dev/null | grep -v "^total" | awk '{printf "    - %-30s %6s\n", $9, $5}' || echo "    (无文件)"
+            fi
         done
         
         echo ""
@@ -229,7 +248,7 @@ echo "  任务完成"
 echo "==========================================="
 echo ""
 echo "提示："
-echo "  - 查看生成的 .dot 文件以了解自动机结构"
-echo "  - 使用 Graphviz 查看器打开 .png 图片"
+echo "  - 查看生成的 . dot 文件以了解自动机结构"
+echo "  - 使用图片查看器打开 .png 图片"
 echo "  - 重新运行: ./build_and_run.sh"
 echo ""
