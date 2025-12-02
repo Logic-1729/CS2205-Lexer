@@ -15,7 +15,7 @@ void Lexer::addTokenClass(const std::string& name, const std::string& regex) {
 }
 
 /**
- * 初始化预定义的 Token 类型（基于 lang.l）
+ * 初始化预定义的 Token 类型（基于 lang. l）
  */
 void Lexer::initializeDefaultTokenClasses() {
     // 注意：顺序决定优先级！关键字必须在标识符之前
@@ -34,15 +34,33 @@ void Lexer::initializeDefaultTokenClasses() {
     addTokenClass("TM_FUNC", "\"func\"");
     addTokenClass("TM_PROC", "\"proc\"");
     
-    // 多字符运算符（长的优先）
+    // 多字符运算符（长的优先，必须在单字符运算符之前）
     addTokenClass("TM_LE", "\"<=\"");
     addTokenClass("TM_GE", "\">=\"");
     addTokenClass("TM_EQ", "\"==\"");
-    addTokenClass("TM_NE", "\"! =\"");
+    addTokenClass("TM_NE", "\"!=\"");
     addTokenClass("TM_AND", "\"&&\"");
     addTokenClass("TM_OR", "\"||\"");
+    addTokenClass("TM_PLUSEQ", "\"+=\"");
+    addTokenClass("TM_MINUSEQ", "\"-=\"");
+    addTokenClass("TM_MULEQ", "\"*=\"");
+    addTokenClass("TM_DIVEQ", "\"/=\"");
     
-    // 单字符运算符
+    // 浮点数（必须在整数之前，优先级更高）
+    // 支持：123. 456, . 456, 123., 123e10, 123. 456e-10, . 456e10
+    addTokenClass("TM_FLOAT", 
+        "((\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+\".\"(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")*((\"e\"|\"E\")(\"+\"|\"-\")?(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+)?|"
+        "\".\"(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+((\"e\"|\"E\")(\"+\"|\"-\")?(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+)?|"
+        "(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+\".\"|"
+        "(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+(\"e\"|\"E\")(\"+\"|\"-\")?(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")+)");
+    
+    // 整数（优先级低于浮点数）
+    addTokenClass("TM_NAT", "(\"0\"|((\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")*))");
+    
+    // 标识符（优先级较低）
+    addTokenClass("TM_IDENT", "([_A-Za-z][_A-Za-z0-9]*)");
+    
+    // 单字符运算符（优先级低于多字符运算符）
     addTokenClass("TM_SEMICOL", "\";\"");
     addTokenClass("TM_LEFT_PAREN", "\"(\"");
     addTokenClass("TM_RIGHT_PAREN", "\")\"");
@@ -56,13 +74,9 @@ void Lexer::initializeDefaultTokenClasses() {
     addTokenClass("TM_LT", "\"<\"");
     addTokenClass("TM_GT", "\">\"");
     addTokenClass("TM_ASGNOP", "\"=\"");
-    addTokenClass("TM_NOT", "\"!\"");
+    addTokenClass("TM_NOT", "\"! \"");
     addTokenClass("TM_AMPERSAND", "\"&\"");
     addTokenClass("TM_COMMA", "\",\"");
-    
-    // 标识符和数字（优先级较低）
-    addTokenClass("TM_NAT", "(\"0\"|((\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")(\"0\"|\"1\"|\"2\"|\"3\"|\"4\"|\"5\"|\"6\"|\"7\"|\"8\"|\"9\")*))");
-    addTokenClass("TM_IDENT", "([_A-Za-z][_A-Za-z0-9]*)");
     
     // 空白字符（通常在分析时跳过）
     addTokenClass("TM_BLANK", "(\" \"|\"\\t\"|\"\\n\"|\"\\r\")");
@@ -119,7 +133,7 @@ void Lexer::build() {
     NFAUnit mergedNFA;
     mergedNFA.start = mergedStart;
     mergedNFA.end = nullptr;
-    mergedNFA. edges = {};
+    mergedNFA.edges = {};
     
     for (size_t i = 0; i < nfas.size(); ++i) {
         CharSet epsilon;
@@ -296,11 +310,11 @@ void Lexer::generateDotFile(const std::string& filename) const {
     // 接受状态
     for (const auto& [stateId, tokenClassIds] : acceptStateToTokenClasses_) {
         file << "  " << stateId << " [shape=doublecircle, label=\"" << stateId;
-        if (! tokenClassIds.empty()) {
+        if (!tokenClassIds.empty()) {
             std::string name = tokenClasses_[tokenClassIds[0]].name;
             // 简化标签
             if (name.length() > 15) {
-                name = name.substr(0, 12) + "...";
+                name = name. substr(0, 12) + "...";
             }
             file << "\\n" << name;
         }

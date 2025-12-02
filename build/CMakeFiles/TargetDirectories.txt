@@ -1,0 +1,3 @@
+/home/logic/DFA/build/CMakeFiles/regex_automata.dir
+/home/logic/DFA/build/CMakeFiles/edit_cache.dir
+/home/logic/DFA/build/CMakeFiles/rebuild_cache.dir

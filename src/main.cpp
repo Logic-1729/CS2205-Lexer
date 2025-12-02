@@ -54,7 +54,7 @@ std::string normalizePath(const std::string& path) {
     
     // 移除开头和结尾的空格
     while (!result.empty() && std::isspace(static_cast<unsigned char>(result. front()))) {
-        result.erase(result.begin());
+        result. erase(result.begin());
     }
     while (!result.empty() && std::isspace(static_cast<unsigned char>(result.back()))) {
         result.pop_back();
@@ -185,23 +185,23 @@ void runPredefinedLexerMode() {
     Lexer lexer;
     lexer.initializeDefaultTokenClasses();
     
-    std::cout << "\nBuilding lexer with " << lexer.getTokenClasses().size() << " token types.. .\n";
+    std::cout << "\nBuilding lexer with " << lexer.getTokenClasses().size() << " token types...\n";
     lexer.build();
     
     lexer.generateDotFile("lexer_dfa.dot");
     std::cout << "\nGenerated: lexer_dfa.dot\n";
     
-    // 生成 PNG 图片
-    std::cout << "\n=== Generating Visualization ===\n";
-    if (generatePNG("lexer_dfa.dot", "lexer_dfa.png")) {
-        std::cout << "✓ Generated: lexer_dfa.png\n";
-    } else {
-        std::cout << "⚠ Warning: Could not generate PNG.\n";
-        std::cout << "  Please check if Graphviz is installed:\n";
-        std::cout << "    Ubuntu/Debian: sudo apt-get install graphviz\n";
-        std::cout << "    macOS:         brew install graphviz\n";
-        std::cout << "  Or manually run: dot -Tpng lexer_dfa.dot -o lexer_dfa.png\n";
-    }
+    // // 生成 PNG 图片
+    // std::cout << "\n=== Generating Visualization ===\n";
+    // if (generatePNG("lexer_dfa.dot", "lexer_dfa.png")) {
+    //     std::cout << "✓ Generated: lexer_dfa.png\n";
+    // } else {
+    //     std::cout << "⚠ Warning: Could not generate PNG.\n";
+    //     std::cout << "  Please check if Graphviz is installed:\n";
+    //     std::cout << "    Ubuntu/Debian: sudo apt-get install graphviz\n";
+    //     std::cout << "    macOS:         brew install graphviz\n";
+    //     std::cout << "  Or manually run: dot -Tpng lexer_dfa.dot -o lexer_dfa.png\n";
+    // }
     
     std::cout << "\n=== Tokenization ===\n";
     std::cout << "Enter code to analyze (or 'quit' to exit):\n";
@@ -223,10 +223,10 @@ void runPredefinedLexerMode() {
             std::cout << "├──────┼────────┼──────────────────┼────────────────────────┤\n";
             
             for (const auto& token : tokens) {
-                std::cout << "│ " << std::setw(4) << token.line 
-                         << " │ " << std::setw(6) << token.column
+                std::cout << "│ " << std::setw(4) << std::right << token.line 
+                         << " │ " << std::setw(6) << std::right << token. column
                          << " │ " << std::setw(16) << std::left << token.tokenClassName
-                         << " │ " << std::setw(22) << ("\"" + token.lexeme + "\"")
+                         << " │ " << std::setw(22) << std::left << ("\"" + token.lexeme + "\"")
                          << " │\n";
             }
             
@@ -300,10 +300,10 @@ void runLexerMode() {
             std::cout << "├──────┼────────┼──────────────────┼────────────────────────┤\n";
             
             for (const auto& token : tokens) {
-                std::cout << "│ " << std::setw(4) << token.line 
-                         << " │ " << std::setw(6) << token.column
+                std::cout << "│ " << std::setw(4) << std::right << token. line 
+                         << " │ " << std::setw(6) << std::right << token.column
                          << " │ " << std::setw(16) << std::left << token.tokenClassName
-                         << " │ " << std::setw(22) << ("\"" + token.lexeme + "\"")
+                         << " │ " << std::setw(22) << std::left << ("\"" + token.lexeme + "\"")
                          << " │\n";
             }
             
