@@ -5,7 +5,7 @@
 std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
     std::vector<Token> result;
     
-    for (size_t i = 0; i < tokens.size(); ++i) {
+    for (size_t i = 0; i < tokens. size(); ++i) {
         const Token& token = tokens[i];
         
         if (token.isOperator()) {
@@ -21,7 +21,7 @@ std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
                 result.pop_back();
                 
                 // 构造 (X|ε)
-                result.push_back(Token('('));
+                result. push_back(Token('('));
                 result.push_back(operand);
                 result.push_back(Token('|'));
                 
@@ -34,7 +34,7 @@ std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
                 
             } else if (op == '+') {
                 // X+ => XX*
-                if (result.empty()) {
+                if (result. empty()) {
                     throw RegexSyntaxError("+ operator without preceding operand");
                 }
                 
@@ -42,7 +42,7 @@ std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
                 // 不弹出，因为需要 XX*
                 
                 result.push_back(operand); // 添加第二个 X
-                result. push_back(Token('*'));
+                result.push_back(Token('*'));
                 
             } else {
                 // 其他操作符 (*, |, (, ), &) 直接保留
@@ -60,7 +60,7 @@ std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
 bool isSimplified(const std::vector<Token>& tokens) {
     for (const auto& token : tokens) {
         if (token.isOperator()) {
-            char op = token. opVal;
+            char op = token.opVal;
             // 简化正则只允许 *, |, (, ), & (连接符)
             if (op != '*' && op != '|' && op != '(' && op != ')' && op != EXPLICIT_CONCAT_OP) {
                 return false;

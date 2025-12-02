@@ -7,11 +7,11 @@
 // 定义全局常量
 const char EXPLICIT_CONCAT_OP = '&';
 
-// 解析 [...] 内容为 CharSet
+// 解析 [... ] 内容为 CharSet
 CharSet parseCharSet(const std::string& content) {
     CharSet cs;
     cs.isEpsilon = false;
-    for (size_t k = 0; k < content.length(); ++k) {
+    for (size_t k = 0; k < content. length(); ++k) {
         if (k + 2 < content.length() && content[k+1] == '-') {
             char start = content[k];
             char end = content[k+2];
@@ -21,7 +21,7 @@ CharSet parseCharSet(const std::string& content) {
             cs.addRange(start, end);
             k += 2;
         } else {
-            cs.addRange(content[k], content[k]);
+            cs. addRange(content[k], content[k]);
         }
     }
     return cs;
@@ -65,7 +65,7 @@ std::vector<Token> preprocessRegex(const std::string& re) {
                 throw RegexSyntaxError("Unmatched '[' at index " + std::to_string(i));
             }
         } 
-        // Handle String Literals e.g. "abc"
+        // Handle String Literals e.g.  "abc"
         else if (c == '"') {
             int j = i + 1;
             while (j < n && re[j] != '"') {
@@ -106,13 +106,16 @@ std::vector<Token> insertConcatSymbols(const std::vector<Token>& tokens) {
 
         bool needConcat = false;
 
+        // 前一个 token 的类型判断
         bool prevIsUnarySuffix = (prev.isOperator() && (prev.opVal == '*' || prev.opVal == '?' || prev.opVal == '+'));
         bool prevIsCloseParen = (prev.isOperator() && prev.opVal == ')');
-        bool prevIsOperand = prev.isOperand();
+        bool prevIsOperand = prev. isOperand();
         
+        // 当前 token 的类型判断
         bool currIsOperand = curr.isOperand();
         bool currIsOpenParen = (curr.isOperator() && curr.opVal == '(');
 
+        // 需要插入连接符的情况
         if ((prevIsOperand || prevIsUnarySuffix || prevIsCloseParen) && 
             (currIsOperand || currIsOpenParen)) {
             needConcat = true;

@@ -8,14 +8,14 @@
 
 void Lexer::addTokenClass(const std::string& name, const std::string& regex) {
     TokenClass tc;
-    tc.id = tokenClasses_. size();
+    tc.id = tokenClasses_.size();
     tc.name = name;
     tc.regex = regex;
-    tokenClasses_. push_back(tc);
+    tokenClasses_.push_back(tc);
 }
 
 /**
- * 初始化预定义的 Token 类型（基于 lang.l）
+ * 初始化预定义的 Token 类型（基于 lang. l）
  */
 void Lexer::initializeDefaultTokenClasses() {
     // 注意：顺序决定优先级！关键字必须在标识符之前
@@ -90,18 +90,23 @@ void Lexer::build() {
         
         try {
             // 预处理正则表达式
-            auto tokens = preprocessRegex(tc.regex);
+            auto tokens = preprocessRegex(tc. regex);
+            std::cout << "    [Debug] Preprocessed: " << tokens.size() << " tokens" << std::endl;
             
-            // 插入连接符
-            auto tokensWithConcat = insertConcatSymbols(tokens);
+            // ⭐ 关键修改：先简化，再插入连接符
+            // 简化正则表达式（将 + 和 ?  转换为基本操作）
+            auto simplifiedTokens = simplifyRegex(tokens);
+            std::cout << "    [Debug] Simplified: " << simplifiedTokens.size() << " tokens" << std::endl;
             
-            // 简化正则表达式
-            auto simplifiedTokens = simplifyRegex(tokensWithConcat);
+            // 插入连接符（在简化之后）
+            auto tokensWithConcat = insertConcatSymbols(simplifiedTokens);
+            std::cout << "    [Debug] With concat: " << tokensWithConcat.size() << " tokens" << std::endl;
             
             // 转换为后缀表达式
-            InfixToPostfix converter(simplifiedTokens);
+            InfixToPostfix converter(tokensWithConcat);
             converter.convert();
             const auto& postfix = converter.getPostfix();
+            std::cout << "    [Debug] Postfix: " << postfix.size() << " tokens" << std::endl;
             
             // 构建 NFA
             NFAUnit nfa = regexToNFA(postfix);
@@ -117,7 +122,7 @@ void Lexer::build() {
     auto mergedStart = std::make_shared<NodeImpl>(9999, "merged_start");
     
     NFAUnit mergedNFA;
-    mergedNFA. start = mergedStart;
+    mergedNFA.start = mergedStart;
     mergedNFA.end = nullptr;
     mergedNFA.edges = {};
     
@@ -136,7 +141,7 @@ void Lexer::build() {
     buildDFAFromNFA(mergedNFA, dfaStates_, dfaTransitions_);
     
     // Step 4: 标记接受状态
-    acceptStateToTokenClasses_. clear();
+    acceptStateToTokenClasses_.clear();
     
     for (const auto& dfaState : dfaStates_) {
         std::vector<int> matchedTokenClasses;
@@ -170,7 +175,7 @@ int Lexer::getTokenClassForState(int stateId) const {
 
 std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
     if (!isBuilt_) {
-        throw std::runtime_error("Lexer not built.  Call build() first.");
+        throw std::runtime_error("Lexer not built. Call build() first.");
     }
     
     std::vector<LexerToken> tokens;
@@ -261,7 +266,7 @@ void Lexer::displayDFA() const {
     int count = 0;
     for (const auto& [stateId, tokenClassIds] : acceptStateToTokenClasses_) {
         if (count++ >= 20) {
-            std::cout << "  ... and " << (acceptStateToTokenClasses_.size() - 20) << " more" << std::endl;
+            std::cout << "  ...  and " << (acceptStateToTokenClasses_.size() - 20) << " more" << std::endl;
             break;
         }
         std::cout << "  State " << stateId << " -> ";
@@ -271,7 +276,7 @@ void Lexer::displayDFA() const {
             if (i == 0) std::cout << " (priority)";
         }
         if (tokenClassIds.size() > 3) {
-            std::cout << " ...  (+" << (tokenClassIds.size() - 3) << " more)";
+            std::cout << " ... (+" << (tokenClassIds.size() - 3) << " more)";
         }
         std::cout << std::endl;
     }
