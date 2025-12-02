@@ -126,22 +126,23 @@ import pydot
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-# number of total examples to test per regex
+# 每个正则表达式测试的样例总数
 EXAMPLE_COUNT = 50
 
-# Fallback random string length range for filler samples
+# 随机字符串的长度范围
 RANDOM_MIN_LEN = 0
 RANDOM_MAX_LEN = 8
 
-# DOT parsing specifics
+# dot 文件相关常量
 DFA_DOT_FILENAME = "dfa_graph.dot"
 START_EDGE_SOURCE = "__start0"
 ACCEPT_NODE_SHAPE = "doublecircle"
 
-# Label parsing
+# dot文件边标签分隔符
 LABEL_SEPARATOR = ","
 
 
+# 生成随机字符串
 def random_string(min_len=RANDOM_MIN_LEN, max_len=RANDOM_MAX_LEN):
     length = random.randint(min_len, max_len)
     return "".join(random.choice(ALPHABET) for _ in range(length))
@@ -151,10 +152,16 @@ def random_string(min_len=RANDOM_MIN_LEN, max_len=RANDOM_MAX_LEN):
 
 
 def expand_single_label(token: str):
-    """Expand a single sublabel to a set of characters: [a-z], [A-Z], [0-9], or literal."""
+    """
+    解析单个标签片段（如 "[a-z]" 或 "x"），返回对应的字符集合。
+    支持：
+      - 字符范围：[a-z], [A-Z], [0-9]
+      - 字面量：单个字符或字符串（如 "ab" 视为 {'a', 'b'}）
+    """
     chars = set()
     token = token.strip()
     if token.startswith("[") and token.endswith("]"):
+        # 处理范围形式，比如 [a-z]
         content = token[1:-1]
         i = 0
         while i < len(content):
@@ -166,17 +173,22 @@ def expand_single_label(token: str):
                 chars.add(content[i])
                 i += 1
     else:
-        # Treat as literal; if multi-char like "ab", expand to {'a', 'b'}
+        # 处理非范围形式，逐个字符添加
         for c in token:
             chars.add(c)
     return chars
 
 
 def expand_label(label: str):
-    """Support comma-separated label parts, e.g. '[0-9],[a-y],z'."""
+    """
+    解析完整的边标签（可能包含逗号分隔的多部分），例如 '[0-9],[a-y],z',
+    返回所有可能字符的并集。
+    """
     chars = set()
-    label = str(label).strip('"')
-    parts = [p.strip() for p in label.split(LABEL_SEPARATOR) if p.strip()]
+    label = str(label).strip('"')  # 去除 Graphviz 自动加的双引号
+    parts = [
+        p.strip() for p in label.split(LABEL_SEPARATOR) if p.strip()
+    ]  # 将逗号分隔的各部分写入列表，下一步用 expand_single_label 处理
     for part in parts:
         chars.update(expand_single_label(part))
     return chars
@@ -186,51 +198,68 @@ def expand_label(label: str):
 
 
 def parse_dfa(dot_file):
+    """
+    从 DOT 文件中解析 DFA 结构：
+      - 起始状态（通过 __start0 边确定）
+      - 接受状态集合（形状为 doublecircle 的节点）
+      - 转移函数：{ 当前状态: { 字符: 下一状态 } }
+    """
     graphs = pydot.graph_from_dot_file(dot_file)
     graph = graphs[0]
     edges = graph.get_edges()
     nodes = graph.get_nodes()
 
-    # Start state via __start0 -> S
+    # 寻找起始状态(文件中 _start0 指向的节点)
     start_edges = [e for e in edges if e.get_source() == START_EDGE_SOURCE]
     start_state = start_edges[0].get_destination() if start_edges else None
 
-    # Accepting states
+    # 寻找所有接受状态
     accepting = [
         n.get_name()
         for n in nodes
         if (n.get_shape() or "").lower() == ACCEPT_NODE_SHAPE
     ]
 
-    # Transitions: state -> {char -> next_state}
+    # 构建转移表
     transitions = {}
     for e in edges:
         src = e.get_source()
         dst = e.get_destination()
         label = e.get_label()
+        # 忽略起始边和无标签边
         if src == START_EDGE_SOURCE or label is None:
             continue
+        # 将标签展开为字符集合，并建立转移
         for ch in expand_label(label):
             transitions.setdefault(src, {})[ch] = dst
     return start_state, accepting, transitions
 
 
 def simulate_dfa(start, accepting, transitions, s):
+    """
+    模拟 DFA 对字符串 s 的处理过程。
+    返回 True 表示接受，False 表示拒绝。
+    """
     if start is None:
         return False
     state = start
     for ch in s:
         if state not in transitions or ch not in transitions[state]:
-            return False
+            return False  # 没有转移路径，False
         state = transitions[state][ch]
-    return state in accepting
+    return state in accepting  # 最终状态是接受状态，True
 
 
 # ----- Near-regex example generation -----
 
 
 def mutate_string(s):
-    """Slightly perturb a string for negative examples."""
+    """
+    对字符串进行轻微扰动（用于生成反例）：
+      - 替换一个字符
+      - 插入一个字符
+      - 删除一个字符
+    """
     if not s:
         return random.choice(ALPHABET)
     ops = ["replace", "insert", "delete"]
@@ -248,8 +277,9 @@ def mutate_string(s):
 
 def simplify_alternations(regex):
     """
-    Simplify top-level ( ... | ... ) groups by randomly picking one branch.
-    Does not support nested alternations deeply; good enough for near examples.
+    简化正则表达式中的顶层选择结构（...|...），随机保留一个分支。
+    例如：(a|b)c → ac 或 bc
+    注意：不处理嵌套选择，仅用于生成“近似”正例。
     """
     i, n = 0, len(regex)
     out = []
@@ -257,6 +287,7 @@ def simplify_alternations(regex):
         if regex[i] == "(":
             depth = 1
             j = i + 1
+            # 寻找匹配的右括号
             while j < n and depth > 0:
                 if regex[j] == "(":
                     depth += 1
@@ -264,7 +295,7 @@ def simplify_alternations(regex):
                     depth -= 1
                 j += 1
             group = regex[i + 1 : j - 1] if j <= n else regex[i + 1 :]
-            # Split by top-level '|' within the group
+            # 按顶层 '|' 分割（忽略括号内的 |）
             parts = []
             buf, d = [], 0
             for ch in group:
@@ -278,10 +309,11 @@ def simplify_alternations(regex):
                 else:
                     buf.append(ch)
             parts.append("".join(buf))
-            choice = random.choice(parts)
+            choice = random.choice(parts)  # 随机选择一个分支
             out.append(choice)
             i = j
         else:
+            # 对于一般字符，直接添加
             out.append(regex[i])
             i += 1
     return "".join(out)
@@ -289,9 +321,9 @@ def simplify_alternations(regex):
 
 def tokenize_linear(regex):
     """
-    Tokenize a linearized regex into [(atom, quant)]:
-    - atom: '[...]' or single literal
-    - quant: '', '?', '*', '+'
+    将简化的正则表达式（无选择结构）切分为 (原子, 量词) 序列。
+    原子：字符类（如 [a-z]）或单个字符
+    量词：'', '?', '*', '+'
     """
     tokens = []
     i, n = 0, len(regex)
@@ -309,13 +341,16 @@ def tokenize_linear(regex):
         if i < n and regex[i] in "?*+":
             quant = regex[i]
             i += 1
-        tokens.append((atom, quant))
+        tokens.append((atom, quant))  # 如果一个原子后面没有量词，量词设置为空字符串
     return tokens
 
 
 def gen_segment(atom, quant):
-    """Generate a segment for (atom, quant)."""
-    # Pick a representative char for atom
+    """
+    根据 (原子, 量词) 生成一段字符串。
+    例如：('[a-z]', '*') → 随机生成 0~3 个小写字母
+    """
+    # 从原子中选一个代表字符(使用expand_single_label)
     choices = list(expand_single_label(atom)) if atom.startswith("[") else [atom]
     rep = random.choice(choices) if choices else ""
     if quant == "?":
@@ -332,30 +367,32 @@ def gen_segment(atom, quant):
 
 def generate_near_examples(regex, count=EXAMPLE_COUNT):
     """
-    Generate near-regex examples:
-    - Positives: build strings from simplified alternations and quantifiers.
-    - Negatives: mutate positives.
-    Always label expected via re.fullmatch to avoid false assumptions.
+    生成贴近正则表达式的测试样例：
+      1. 简化 regex（处理选择结构）
+      2. 生成正例（根据量词规则）
+      3. 通过扰动生成反例
+      4. 所有样例均用 re.fullmatch 标注正确答案（避免假设错误）
+      5. 若数量不足，用完全随机字符串补充
     """
     examples = []
     linear = simplify_alternations(regex)
     tokens = tokenize_linear(linear)
 
-    # Create positives
+    # 生成正例
     positives = []
     for _ in range(max(10, count // 2)):
         s = "".join(gen_segment(atom, quant) for atom, quant in tokens)
         positives.append(s)
 
-    # Create negatives by mutation
+    # 扰动生成反例
     negatives = [mutate_string(s) for s in positives]
 
-    # Label all examples by actual regex truth
+    # 用 re.fullmatch 标注真实结果
     labeled = []
     for s in positives + negatives:
         labeled.append((s, re.fullmatch(regex, s) is not None))
 
-    # If fewer than count, add random samples as filler (also labeled)
+    # y用随机字符串补充至要求的数量
     while len(labeled) < count:
         s = random_string(RANDOM_MIN_LEN, RANDOM_MAX_LEN)
         labeled.append((s, re.fullmatch(regex, s) is not None))
@@ -369,10 +406,19 @@ def generate_near_examples(regex, count=EXAMPLE_COUNT):
 
 # Build full dot path from regex
 def build_dot_path(regex: str) -> str:
+    """根据正则表达式目录名，构建 DFA DOT 文件的完整路径"""
     return os.path.join(regex, DFA_DOT_FILENAME)
 
 
 def verify_regex(regex):
+    """
+    验证指定正则表达式对应的 DFA 是否正确：
+      - 检查 DOT 文件是否存在
+      - 解析 DFA
+      - 生成测试样例
+      - 比对 DFA 与 re.fullmatch 的结果
+      - 返回验证结果和错误信息
+    """
     dot_file = build_dot_path(regex)
     if not os.path.exists(dot_file):
         return False, f"{regex}: dot文件不存在"
