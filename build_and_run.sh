@@ -49,7 +49,8 @@ case $mode_choice in
         
         # 交互式运行
         chmod +x ./regex_automata
-        echo "1" | ./regex_automata
+        # 【修正】直接运行，不使用管道，以支持交互
+        ./regex_automata 1
         
         # 生成 DFA 可视化
         if [ -f "lexer_dfa.dot" ]; then
@@ -79,9 +80,9 @@ case $mode_choice in
             exit 1
         fi
         
-        # 准备输入数据
-        echo "2" > /tmp/lexer_input.txt
-        echo "$token_count" >> /tmp/lexer_input. txt
+        # 准备输入数据 (Token 数量)
+        # 【修正】不再写入 "2" (模式选择已通过参数传递)
+        echo "$token_count" > /tmp/lexer_input.txt
         
         # 收集每个 token 的定义
         for ((i=1; i<=token_count; i++))
@@ -91,25 +92,30 @@ case $mode_choice in
             read -r -p "  名称 (如 IDENTIFIER): " token_name
             read -r -p "  正则表达式 (如 [a-z]+): " token_regex
             
-            echo "$token_name" >> /tmp/lexer_input. txt
+            echo "$token_name" >> /tmp/lexer_input.txt
             echo "$token_regex" >> /tmp/lexer_input.txt
         done
         
-        echo "quit" >> /tmp/lexer_input.txt
+        # 【修正】不写入 "quit"，以便后续转入交互模式
+        
+        echo ""
+        echo "--- 配置完成，进入交互模式 ---"
         
         # 运行程序
         chmod +x ./regex_automata
-        cat /tmp/lexer_input. txt | ./regex_automata
+        # 【修正】将配置文件和当前 stdin (cat) 拼接后传给程序
+        # 这样程序先读配置，再读取用户键盘输入
+        (cat /tmp/lexer_input.txt; cat) | ./regex_automata 2
         
         # 清理临时文件
-        rm -f /tmp/lexer_input. txt
+        rm -f /tmp/lexer_input.txt
         
         # 生成可视化
         if [ -f "custom_lexer_dfa.dot" ]; then
             echo ""
             echo "=== 生成可视化图片 ==="
             if command -v dot &> /dev/null; then
-                dot -Tpng custom_lexer_dfa. dot -o custom_lexer_dfa.png
+                dot -Tpng custom_lexer_dfa.dot -o custom_lexer_dfa.png
                 echo "✓ 生成: custom_lexer_dfa.png"
             else
                 echo "⚠ 警告: 未找到 'dot' 命令。"
@@ -161,8 +167,8 @@ case $mode_choice in
             
             # 运行 C++ 程序
             chmod +x ./regex_automata
-            # 模式 3 需要两次输入: "3" (选择模式) 和正则表达式
-            (echo "3"; echo "$regex_input") | ./regex_automata "./$folder_name"
+            # 【修正】通过参数传递模式 3 和输出目录
+            echo "$regex_input" | ./regex_automata 3 "./$folder_name"
             
             # 生成图片
             echo ""
@@ -172,7 +178,7 @@ case $mode_choice in
                 png_generated=0
                 
                 # NFA
-                if [ -f "./$folder_name/nfa_graph. dot" ]; then
+                if [ -f "./$folder_name/nfa_graph.dot" ]; then
                     dot -Tpng "./$folder_name/nfa_graph.dot" -o "./$folder_name/nfa.png"
                     echo "  ✓ NFA:  ./$folder_name/nfa.png"
                     ((png_generated++))
@@ -180,7 +186,7 @@ case $mode_choice in
 
                 # Original DFA
                 if [ -f "./$folder_name/dfa_graph.dot" ]; then
-                    dot -Tpng "./$folder_name/dfa_graph. dot" -o "./$folder_name/dfa.png"
+                    dot -Tpng "./$folder_name/dfa_graph.dot" -o "./$folder_name/dfa.png"
                     echo "  ✓ DFA:  ./$folder_name/dfa.png"
                     ((png_generated++))
                 fi
@@ -193,7 +199,7 @@ case $mode_choice in
                 fi
                 
                 if [ $png_generated -eq 0 ]; then
-                    echo "  ⚠ 未找到 . dot 文件"
+                    echo "  ⚠ 未找到 .dot 文件 (检查程序输出目录是否正确)"
                 fi
             else
                 echo "  ⚠ 警告: 未找到 'dot' 命令，无法生成 PNG 图片。"
@@ -223,7 +229,7 @@ echo "  任务完成"
 echo "==========================================="
 echo ""
 echo "提示："
-echo "  - 查看生成的 . dot 文件以了解自动机结构"
+echo "  - 查看生成的 .dot 文件以了解自动机结构"
 echo "  - 使用 Graphviz 查看器打开 .png 图片"
 echo "  - 重新运行: ./build_and_run.sh"
 echo ""
