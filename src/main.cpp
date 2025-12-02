@@ -270,7 +270,7 @@ void runLexerMode() {
     
     // 生成 PNG 图片
     std::cout << "\n=== Generating Visualization ===\n";
-    if (generatePNG("custom_lexer_dfa. dot", "custom_lexer_dfa.png")) {
+    if (generatePNG("custom_lexer_dfa.dot", "custom_lexer_dfa.png")) {
         std::cout << "✓ Generated: custom_lexer_dfa.png\n";
     } else {
         std::cout << "⚠ Warning: Could not generate PNG.\n";
