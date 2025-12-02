@@ -9,7 +9,6 @@
 #include <iomanip>
 #include <sys/stat.h>
 #include <cstdlib>
-#include <unistd.h>
 
 // 函数声明
 void runLexerMode();
@@ -18,50 +17,30 @@ void runPredefinedLexerMode();
 
 // 辅助函数：转义 shell 特殊字符
 std::string escapeShellArg(const std::string& arg) {
-    std::string escaped;
+    std::string escaped = "\"";
     for (char c : arg) {
-        // 转义 shell 特殊字符
-        if (c == ' ' || c == '(' || c == ')' || c == '|' || c == '&' || 
-            c == ';' || c == '<' || c == '>' || c == '*' || c == '?' || 
-            c == '[' || c == ']' || c == '{' || c == '}' || c == '$' || 
-            c == '`' || c == '\\' || c == '"' || c == '\'' || c == '! ') {
+        if (c == '"' || c == '\\' || c == '$' || c == '`') {
             escaped += '\\';
         }
         escaped += c;
     }
+    escaped += "\"";
     return escaped;
 }
 
-// 辅助函数：检查命令是否存在（改进版）
-bool commandExists(const std::string& command) {
-    // 方法1：使用 which 命令
-    std::string checkCmd = "which " + command + " > /dev/null 2>&1";
-    if (system(checkCmd.c_str()) == 0) {
-        return true;
-    }
-    
-    // 方法2：尝试直接执行命令的 --version
-    std::string versionCmd = command + " --version > /dev/null 2>&1";
-    if (system(versionCmd. c_str()) == 0) {
-        return true;
-    }
-    
-    return false;
-}
-
-// 辅助函数：生成 PNG 图片（改进版）
+// 辅助函数：生成 PNG 图片
 bool generatePNG(const std::string& dotFile, const std::string& pngFile) {
     // 转义文件路径
     std::string escapedDot = escapeShellArg(dotFile);
     std::string escapedPng = escapeShellArg(pngFile);
     
-    // 直接尝试执行，不再预先检查 dot 命令是否存在
+    // 构建命令
     std::string cmd = "dot -Tpng " + escapedDot + " -o " + escapedPng + " 2>/dev/null";
+    
     int result = system(cmd.c_str());
     
-    // 如果命令执行成功并且文件确实生成了
+    // 验证文件是否生成
     if (result == 0) {
-        // 验证文件是否真的生成
         std::ifstream file(pngFile);
         return file.good();
     }
@@ -75,7 +54,7 @@ std::string normalizePath(const std::string& path) {
     
     // 移除开头和结尾的空格
     while (!result.empty() && std::isspace(static_cast<unsigned char>(result. front()))) {
-        result. erase(result.begin());
+        result.erase(result.begin());
     }
     while (!result.empty() && std::isspace(static_cast<unsigned char>(result.back()))) {
         result.pop_back();
@@ -127,9 +106,8 @@ bool ensureDirectoryExists(const std::string& path) {
         #ifdef _WIN32
             int result = _mkdir(normalizedPath.c_str());
         #else
-            // 使用 system 调用 mkdir -p 来创建目录（支持特殊字符）
             std::string cmd = "mkdir -p " + escapeShellArg(normalizedPath) + " 2>/dev/null";
-            int result = system(cmd. c_str());
+            int result = system(cmd.c_str());
         #endif
         
         if (result == 0) {
@@ -207,8 +185,8 @@ void runPredefinedLexerMode() {
     Lexer lexer;
     lexer.initializeDefaultTokenClasses();
     
-    std::cout << "\nBuilding lexer with " << lexer.getTokenClasses(). size() << " token types.. .\n";
-    lexer. build();
+    std::cout << "\nBuilding lexer with " << lexer.getTokenClasses().size() << " token types.. .\n";
+    lexer.build();
     
     lexer.generateDotFile("lexer_dfa.dot");
     std::cout << "\nGenerated: lexer_dfa.dot\n";

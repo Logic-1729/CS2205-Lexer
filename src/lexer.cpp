@@ -8,14 +8,14 @@
 
 void Lexer::addTokenClass(const std::string& name, const std::string& regex) {
     TokenClass tc;
-    tc.id = tokenClasses_.size();
+    tc.id = tokenClasses_. size();
     tc.name = name;
     tc.regex = regex;
     tokenClasses_.push_back(tc);
 }
 
 /**
- * 初始化预定义的 Token 类型（基于 lang. l）
+ * 初始化预定义的 Token 类型（基于 lang.l）
  */
 void Lexer::initializeDefaultTokenClasses() {
     // 注意：顺序决定优先级！关键字必须在标识符之前
@@ -38,7 +38,7 @@ void Lexer::initializeDefaultTokenClasses() {
     addTokenClass("TM_LE", "\"<=\"");
     addTokenClass("TM_GE", "\">=\"");
     addTokenClass("TM_EQ", "\"==\"");
-    addTokenClass("TM_NE", "\"!=\"");
+    addTokenClass("TM_NE", "\"! =\"");
     addTokenClass("TM_AND", "\"&&\"");
     addTokenClass("TM_OR", "\"||\"");
     
@@ -90,23 +90,18 @@ void Lexer::build() {
         
         try {
             // 预处理正则表达式
-            auto tokens = preprocessRegex(tc. regex);
-            std::cout << "    [Debug] Preprocessed: " << tokens.size() << " tokens" << std::endl;
+            auto tokens = preprocessRegex(tc.regex);
             
-            // ⭐ 关键修改：先简化，再插入连接符
             // 简化正则表达式（将 + 和 ?  转换为基本操作）
             auto simplifiedTokens = simplifyRegex(tokens);
-            std::cout << "    [Debug] Simplified: " << simplifiedTokens.size() << " tokens" << std::endl;
             
             // 插入连接符（在简化之后）
             auto tokensWithConcat = insertConcatSymbols(simplifiedTokens);
-            std::cout << "    [Debug] With concat: " << tokensWithConcat.size() << " tokens" << std::endl;
             
             // 转换为后缀表达式
             InfixToPostfix converter(tokensWithConcat);
             converter.convert();
             const auto& postfix = converter.getPostfix();
-            std::cout << "    [Debug] Postfix: " << postfix.size() << " tokens" << std::endl;
             
             // 构建 NFA
             NFAUnit nfa = regexToNFA(postfix);
@@ -124,7 +119,7 @@ void Lexer::build() {
     NFAUnit mergedNFA;
     mergedNFA.start = mergedStart;
     mergedNFA.end = nullptr;
-    mergedNFA.edges = {};
+    mergedNFA. edges = {};
     
     for (size_t i = 0; i < nfas.size(); ++i) {
         CharSet epsilon;
@@ -141,7 +136,7 @@ void Lexer::build() {
     buildDFAFromNFA(mergedNFA, dfaStates_, dfaTransitions_);
     
     // Step 4: 标记接受状态
-    acceptStateToTokenClasses_.clear();
+    acceptStateToTokenClasses_. clear();
     
     for (const auto& dfaState : dfaStates_) {
         std::vector<int> matchedTokenClasses;
@@ -175,7 +170,7 @@ int Lexer::getTokenClassForState(int stateId) const {
 
 std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
     if (!isBuilt_) {
-        throw std::runtime_error("Lexer not built. Call build() first.");
+        throw std::runtime_error("Lexer not built.  Call build() first.");
     }
     
     std::vector<LexerToken> tokens;
@@ -276,7 +271,7 @@ void Lexer::displayDFA() const {
             if (i == 0) std::cout << " (priority)";
         }
         if (tokenClassIds.size() > 3) {
-            std::cout << " ... (+" << (tokenClassIds.size() - 3) << " more)";
+            std::cout << " ...  (+" << (tokenClassIds.size() - 3) << " more)";
         }
         std::cout << std::endl;
     }
@@ -305,7 +300,7 @@ void Lexer::generateDotFile(const std::string& filename) const {
             std::string name = tokenClasses_[tokenClassIds[0]].name;
             // 简化标签
             if (name.length() > 15) {
-                name = name. substr(0, 12) + "...";
+                name = name.substr(0, 12) + "...";
             }
             file << "\\n" << name;
         }
@@ -315,7 +310,7 @@ void Lexer::generateDotFile(const std::string& filename) const {
     // 聚合转移边
     std::map<std::pair<int, int>, std::vector<std::string>> aggregated;
     for (const auto& trans : dfaTransitions_) {
-        aggregated[{trans.fromStateId, trans.toStateId}].push_back(trans.transitionSymbol.toString());
+        aggregated[{trans.fromStateId, trans.toStateId}]. push_back(trans.transitionSymbol.toString());
     }
     
     for (const auto& [key, labels] : aggregated) {
