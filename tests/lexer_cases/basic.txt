@@ -1,0 +1,27 @@
+# 基本关键字和标识符
+>>> var
+TM_VAR "var"
+
+>>> varx
+TM_IDENT "varx"
+
+>>> if else then while do for
+TM_IF "if"
+TM_ELSE "else"
+TM_THEN "then"
+TM_WHILE "while"
+TM_DO "do"
+TM_FOR "for"
+
+>>> continue break return func proc
+TM_CONTINUE "continue"
+TM_BREAK "break"
+TM_RETURN "return"
+TM_FUNC "func"
+TM_PROC "proc"
+
+>>> x y z _test123
+TM_IDENT "x"
+TM_IDENT "y"
+TM_IDENT "z"
+TM_IDENT "_test123"

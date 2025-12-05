@@ -1,0 +1,34 @@
+# 单字符运算符
+>>> + - * / % ! & < > = ; , ( ) { }
+TM_PLUS "+"
+TM_MINUS "-"
+TM_MUL "*"
+TM_DIV "/"
+TM_MOD "%"
+TM_NOT "!"
+TM_AMPERSAND "&"
+TM_LT "<"
+TM_GT ">"
+TM_ASGNOP "="
+TM_SEMICOL ";"
+TM_COMMA ","
+TM_LEFT_PAREN "("
+TM_RIGHT_PAREN ")"
+TM_LEFT_BRACE "{"
+TM_RIGHT_BRACE "}"
+
+# 复合运算符
+>>> <= >= == != && ||
+TM_LE "<="
+TM_GE ">="
+TM_EQ "=="
+TM_NE "!="
+TM_AND "&&"
+TM_OR "||"
+
+# 复合赋值
+>>> += -= *= /=
+TM_PLUSEQ "+="
+TM_MINUSEQ "-="
+TM_MULEQ "*="
+TM_DIVEQ "/="

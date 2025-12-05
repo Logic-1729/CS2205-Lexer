@@ -1,0 +1,29 @@
+# 数字字面量
+>>> 0 123 999
+TM_NAT "0"
+TM_NAT "123"
+TM_NAT "999"
+
+>>> 3.14
+TM_FLOAT "3.14"
+
+>>> .5
+TM_FLOAT ".5"
+
+>>> 123.
+TM_FLOAT "123."
+
+>>> 1e5
+TM_FLOAT "1e5"
+
+>>> 1.23e-4
+TM_FLOAT "1.23e-4"
+
+>>> 1E+10
+TM_FLOAT "1E+10"
+
+# 混合
+>>> 123 3.14 1e2
+TM_NAT "123"
+TM_FLOAT "3.14"
+TM_FLOAT "1e2"

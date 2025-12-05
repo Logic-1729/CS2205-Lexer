@@ -1,0 +1,39 @@
+# 关键字与标识符边界
+>>> variable
+TM_IDENT "variable"
+
+>>> ifx
+TM_IDENT "ifx"
+
+>>> return_value
+TM_IDENT "return_value"
+
+# 空白字符（应被忽略）
+>>>    
+
+
+>>> 
+
+
+# 混合表达式
+>>> x = 3.14;
+TM_IDENT "x"
+TM_ASGNOP "="
+TM_FLOAT "3.14"
+TM_SEMICOL ";"
+
+>>> if(x>=0)then{x=+1;}
+TM_IF "if"
+TM_LEFT_PAREN "("
+TM_IDENT "x"
+TM_GE ">="
+TM_NAT "0"
+TM_RIGHT_PAREN ")"
+TM_THEN "then"
+TM_LEFT_BRACE "{"
+TM_IDENT "x"
+TM_ASGNOP "="
+TM_PLUS "+"
+TM_NAT "1"
+TM_SEMICOL ";"
+TM_RIGHT_BRACE "}"
