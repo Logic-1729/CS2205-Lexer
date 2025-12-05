@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-TEST_FILE="testcases/test_cases9.txt"
+TEST_FILE="testcases/test_cases5.txt"
 
 if [ ! -f "$TEST_FILE" ]; then
     echo "❌ 没有找到 $TEST_FILE"
@@ -20,7 +20,7 @@ while IFS= read -r regex; do
     echo "正在测试正则: $regex"
 
     # 调用 regex_automata 生成 dot 文件
-    echo "$regex" | ../regex_automata "$regex"
+    echo "$regex" | ../regex_automata  3 "$regex"
 
     # 验证 DFA 正确性
     result=$(python3 verify_dot.py "$regex")
