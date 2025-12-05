@@ -5,17 +5,18 @@
 #include <queue>
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
 
 void Lexer::addTokenClass(const std::string& name, const std::string& regex) {
     TokenClass tc;
-    tc.id = tokenClasses_.size();
+    tc.id = tokenClasses_. size();
     tc.name = name;
     tc.regex = regex;
-    tokenClasses_.push_back(tc);
+    tokenClasses_. push_back(tc);
 }
 
 /**
- * 初始化预定义的 Token 类型（基于 lang.l）
+ * 初始化预定义的 Token 类型（基于 lang. l）
  */
 void Lexer::initializeDefaultTokenClasses() {
     // 注意：顺序决定优先级！关键字必须在标识符之前
@@ -47,12 +48,8 @@ void Lexer::initializeDefaultTokenClasses() {
     addTokenClass("TM_DIVEQ", "\"/=\"");
     
     // 浮点数（必须在整数之前）
-    // 修正说明：移除了之前正则表达式中意外引入的空格
-    // 格式1: digits.digits[exponent]  -> [0-9]+"."[0-9]*...
-    // 格式2: .digits[exponent]        -> "."[0-9]+...
-    // 格式3: digits exponent          -> [0-9]+exponent...
     addTokenClass("TM_FLOAT", 
-        "(([0-9]+\".\"[0-9]*((\"e\"|\"E\")(\"+\"|\"-\")?[0-9]+)?)|"
+        "(([0-9]+\". \"[0-9]*((\"e\"|\"E\")(\"+\"|\"-\")?[0-9]+)?)|"
         "(\".\"[0-9]+((\"e\"|\"E\")(\"+\"|\"-\")?[0-9]+)?)|"
         "([0-9]+((\"e\"|\"E\")(\"+\"|\"-\")?[0-9]+)))");
 
@@ -76,7 +73,7 @@ void Lexer::initializeDefaultTokenClasses() {
     addTokenClass("TM_LT", "\"<\"");
     addTokenClass("TM_GT", "\">\"");
     addTokenClass("TM_ASGNOP", "\"=\"");
-    addTokenClass("TM_NOT", "\"!\"");
+    addTokenClass("TM_NOT", "\"! \"");
     addTokenClass("TM_AMPERSAND", "\"&\"");
     addTokenClass("TM_COMMA", "\",\"");
     
@@ -135,14 +132,14 @@ void Lexer::build() {
     NFAUnit mergedNFA;
     mergedNFA.start = mergedStart;
     mergedNFA.end = nullptr;
-    mergedNFA.edges = {};
+    mergedNFA. edges = {};
     
     for (size_t i = 0; i < nfas.size(); ++i) {
         CharSet epsilon;
         epsilon.isEpsilon = true;
         mergedNFA.edges.push_back({mergedStart, nfas[i].start, epsilon});
-        mergedNFA.edges.insert(mergedNFA.edges.end(), 
-                               nfas[i].edges.begin(), 
+        mergedNFA.edges.insert(mergedNFA.edges. end(), 
+                               nfas[i].edges. begin(), 
                                nfas[i].edges.end());
     }
     
@@ -152,7 +149,7 @@ void Lexer::build() {
     buildDFAFromNFA(mergedNFA, dfaStates_, dfaTransitions_);
     
     // Step 4: 标记接受状态
-    acceptStateToTokenClasses_.clear();
+    acceptStateToTokenClasses_. clear();
     
     for (const auto& dfaState : dfaStates_) {
         std::vector<int> matchedTokenClasses;
@@ -163,7 +160,7 @@ void Lexer::build() {
             }
         }
         
-        if (!matchedTokenClasses.empty()) {
+        if (! matchedTokenClasses.empty()) {
             std::sort(matchedTokenClasses.begin(), matchedTokenClasses.end());
             acceptStateToTokenClasses_[dfaState.id] = matchedTokenClasses;
         }
@@ -186,7 +183,7 @@ int Lexer::getTokenClassForState(int stateId) const {
 
 std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
     if (!isBuilt_) {
-        throw std::runtime_error("Lexer not built. Call build() first.");
+        throw std::runtime_error("Lexer not built.  Call build() first.");
     }
     
     std::vector<LexerToken> tokens;
@@ -198,20 +195,32 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
         int lastAcceptPos = -1;
         int lastAcceptTokenClass = -1;
         size_t i = pos;
-        int tempLine = line, tempColumn = column;
+        
+        // Debug: 打印当前位置和字符
+        // std::cout << "[DEBUG] Position " << pos << ", Character: '" << input[pos] << "' (ASCII " << (int)input[pos] << ")" << std::endl;
         
         while (i < input.length()) {
             char c = input[i];
             
             int nextState = -1;
+            // 遍历所有可能的转移
             for (const auto& trans : dfaTransitions_) {
-                if (trans.fromStateId == currentState && trans.transitionSymbol.match(c)) {
-                    nextState = trans.toStateId;
-                    break;
+                if (trans.fromStateId == currentState) {
+                    // Debug: 检查 CharSet 匹配情况
+                    // std::cout << "[DEBUG]   Checking transition from " << currentState 
+                    //           << " on symbol " << trans.transitionSymbol. toString() 
+                    //           << " against '" << c << "'" << std::endl;
+                    
+                    if (trans.transitionSymbol.match(c)) {
+                        nextState = trans.toStateId;
+                        // std::cout << "[DEBUG]   ✓ Match!  Next state: " << nextState << std::endl;
+                        break;
+                    }
                 }
             }
             
             if (nextState == -1) {
+                // std::cout << "[DEBUG] No transition found for '" << c << "' from state " << currentState << std::endl;
                 break;
             }
             
@@ -222,6 +231,8 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
             if (tokenClassId >= 0) {
                 lastAcceptPos = i;
                 lastAcceptTokenClass = tokenClassId;
+                // std::cout << "[DEBUG] Accept state " << currentState 
+                //           << " for token class: " << tokenClasses_[tokenClassId].name << std::endl;
             }
         }
         
@@ -236,6 +247,9 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
                 token.line = line;
                 token.column = column;
                 tokens.push_back(token);
+                
+                // std::cout << "[DEBUG] Token created: " << token.tokenClassName 
+                //           << " = \"" << token.lexeme << "\"" << std::endl;
             }
             
             for (size_t j = pos; j < static_cast<size_t>(lastAcceptPos); ++j) {
@@ -249,13 +263,34 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
             
             pos = lastAcceptPos;
         } else {
+            // 增强错误提示
             std::string errorContext = input.substr(pos, std::min(size_t(20), input.length() - pos));
-            throw std::runtime_error(
+            
+            // 显示可能的期望输入
+            std::string expectedChars = "Expected: ";
+            bool hasExpected = false;
+            for (const auto& trans : dfaTransitions_) {
+                if (trans.fromStateId == currentState) {
+                    if (hasExpected) expectedChars += ", ";
+                    expectedChars += trans.transitionSymbol.toString();
+                    hasExpected = true;
+                }
+            }
+            
+            std::string errorMsg = 
                 "Lexical error at line " + std::to_string(line) + 
                 ", column " + std::to_string(column) + 
-                ": unexpected character '" + std::string(1, input[pos]) + "'\n" +
-                "Context: \"" + errorContext + "\""
-            );
+                ": unexpected character '" + std::string(1, input[pos]) + "' (ASCII " + std::to_string((int)(unsigned char)input[pos]) + ")\n" +
+                "Context: \"" + errorContext + "\"\n";
+            
+            if (hasExpected) {
+                errorMsg += expectedChars + "\n";
+            }
+            
+            // 显示当前 DFA 状态
+            errorMsg += "Current DFA state: " + std::to_string(currentState);
+            
+            throw std::runtime_error(errorMsg);
         }
     }
     
@@ -264,14 +299,14 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
 
 void Lexer::displayDFA() const {
     std::cout << "\n=== Lexer DFA Info ===" << std::endl;
-    std::cout << "Total States: " << dfaStates_.size() << std::endl;
+    std::cout << "Total States: " << dfaStates_. size() << std::endl;
     std::cout << "Total Transitions: " << dfaTransitions_.size() << std::endl;
     
     std::cout << "\nAccept States (showing first 20):" << std::endl;
     int count = 0;
     for (const auto& [stateId, tokenClassIds] : acceptStateToTokenClasses_) {
         if (count++ >= 20) {
-            std::cout << "  ... and " << (acceptStateToTokenClasses_.size() - 20) << " more" << std::endl;
+            std::cout << "  ...  and " << (acceptStateToTokenClasses_.size() - 20) << " more" << std::endl;
             break;
         }
         std::cout << "  State " << stateId << " -> ";
@@ -281,9 +316,22 @@ void Lexer::displayDFA() const {
             if (i == 0) std::cout << " (priority)";
         }
         if (tokenClassIds.size() > 3) {
-            std::cout << " ... (+" << (tokenClassIds.size() - 3) << " more)";
+            std::cout << " ...  (+" << (tokenClassIds.size() - 3) << " more)";
         }
         std::cout << std::endl;
+    }
+    
+    // 显示 DFA 转移表（调试用）
+    std::cout << "\nDFA Transitions (showing first 30):" << std::endl;
+    count = 0;
+    for (const auto& trans : dfaTransitions_) {
+        if (count++ >= 30) {
+            std::cout << "  ... and " << (dfaTransitions_.size() - 30) << " more" << std::endl;
+            break;
+        }
+        std::cout << "  State " << trans.fromStateId 
+                  << " --[" << trans.transitionSymbol.toString() << "]--> "
+                  << "State " << trans.toStateId << std::endl;
     }
 }
 
@@ -297,17 +345,17 @@ void Lexer::generateDotFile(const std::string& filename) const {
     file << "  rankdir=LR;\n";
     file << "  node [shape=circle, fontsize=10];\n";
     
-    if (!dfaStates_.empty()) {
+    if (! dfaStates_.empty()) {
         file << "  __start [shape=none, label=\"\"];\n";
         file << "  __start -> " << dfaStates_[0].id << ";\n";
     }
     
     for (const auto& [stateId, tokenClassIds] : acceptStateToTokenClasses_) {
         file << "  " << stateId << " [shape=doublecircle, label=\"" << stateId;
-        if (!tokenClassIds.empty()) {
+        if (!tokenClassIds. empty()) {
             std::string name = tokenClasses_[tokenClassIds[0]].name;
-            if (name.length() > 15) {
-                name = name.substr(0, 12) + "...";
+            if (name. length() > 15) {
+                name = name. substr(0, 12) + "...";
             }
             file << "\\n" << name;
         }
