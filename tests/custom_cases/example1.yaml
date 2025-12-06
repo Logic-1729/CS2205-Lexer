@@ -1,0 +1,15 @@
+name: "Example from log"
+token_classes:
+  - name: ab
+    regex: abccc
+  - name: cd
+    regex: abc*
+  - name: ef
+    regex: abcccc
+inputs:
+  - lexeme: "abccc"
+    expected_token: "ab"
+  - lexeme: "abcccc"
+    expected_token: "cd"
+  - lexeme: "abcccccc"
+    expected_token: "cd"

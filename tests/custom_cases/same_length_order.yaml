@@ -1,0 +1,11 @@
+name: "Longest match wins over earlier short match"
+token_classes:
+  - name: "long"
+    regex: abbb*
+  - name: "short"
+    regex: ab*
+inputs:
+  - lexeme: "abbbb"
+    expected_token: "long"
+  - lexeme: "ab"
+    expected_token: "short"
