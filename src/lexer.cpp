@@ -16,7 +16,7 @@ void Lexer::addTokenClass(const std::string& name, const std::string& regex) {
 }
 
 /**
- * 初始化预定义的 Token 类型（基于 lang. l）
+ * 初始化预定义的 Token 类型（基于 lang.l）
  */
 void Lexer::initializeDefaultTokenClasses() {
     // 注意：顺序决定优先级！关键字必须在标识符之前
@@ -196,8 +196,8 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
         int lastAcceptTokenClass = -1;
         size_t i = pos;
         
-        // Debug: 打印当前位置和字符
-        // std::cout << "[DEBUG] Position " << pos << ", Character: '" << input[pos] << "' (ASCII " << (int)input[pos] << ")" << std::endl;
+        std::cout << "[DEBUG] Position " << pos << ", Character: '" 
+                  << input[pos] << "' (ASCII " << (int)input[pos] << ")" << std::endl;
         
         while (i < input.length()) {
             char c = input[i];
@@ -206,21 +206,21 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
             // 遍历所有可能的转移
             for (const auto& trans : dfaTransitions_) {
                 if (trans.fromStateId == currentState) {
-                    // Debug: 检查 CharSet 匹配情况
-                    // std::cout << "[DEBUG]   Checking transition from " << currentState 
-                    //           << " on symbol " << trans.transitionSymbol. toString() 
-                    //           << " against '" << c << "'" << std::endl;
+                    std::cout << "[DEBUG]   Checking transition from " << currentState 
+                              << " on symbol " << trans.transitionSymbol.toString() 
+                              << " against '" << c << "'" << std::endl;
                     
                     if (trans.transitionSymbol.match(c)) {
                         nextState = trans.toStateId;
-                        // std::cout << "[DEBUG]   ✓ Match!  Next state: " << nextState << std::endl;
+                        std::cout << "[DEBUG]   ✓ Match!  Next state: " << nextState << std::endl;
                         break;
                     }
                 }
             }
             
             if (nextState == -1) {
-                // std::cout << "[DEBUG] No transition found for '" << c << "' from state " << currentState << std::endl;
+                std::cout << "[DEBUG] No transition found for '" << c 
+                          << "' from state " << currentState << std::endl;
                 break;
             }
             
@@ -231,8 +231,8 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
             if (tokenClassId >= 0) {
                 lastAcceptPos = i;
                 lastAcceptTokenClass = tokenClassId;
-                // std::cout << "[DEBUG] Accept state " << currentState 
-                //           << " for token class: " << tokenClasses_[tokenClassId].name << std::endl;
+                std::cout << "[DEBUG] Accept state " << currentState 
+                          << " for token class: " << tokenClasses_[tokenClassId].name << std::endl;
             }
         }
         
@@ -248,8 +248,8 @@ std::vector<LexerToken> Lexer::tokenize(const std::string& input) {
                 token.column = column;
                 tokens.push_back(token);
                 
-                // std::cout << "[DEBUG] Token created: " << token.tokenClassName 
-                //           << " = \"" << token.lexeme << "\"" << std::endl;
+                std::cout << "[DEBUG] Token created: " << token.tokenClassName 
+                          << " = \"" << token.lexeme << "\"" << std::endl;
             }
             
             for (size_t j = pos; j < static_cast<size_t>(lastAcceptPos); ++j) {
