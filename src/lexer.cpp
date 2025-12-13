@@ -1,3 +1,25 @@
+/*
+ * lexer.cpp - implements the Lexer class that constructs a unified DFA from multiple
+ * regular expressions (one per token class) and uses it to tokenize input strings.
+ * It features:
+ * - Token class management: supports adding custom token classes or initializing
+ * a predefined set (e.g., keywords, operators, identifiers, literals) with priority
+ * determined by declaration order (earlier = higher priority).
+ * - NFA construction: for each token regex, performs full preprocessing (including
+ * string literal handling, character class parsing), simplifies syntactic sugar (?, +),
+ * inserts explicit concatenation, converts to postfix, and builds an NFA via Thompson's construction.
+ * - NFA union: combines all token NFAs into a single NFA with a new start state and
+ * epsilon transitions to each individual NFA start.
+ * - DFA construction: converts the merged NFA to DFA using subset construction and caches
+ * which token classes each DFA accepting state corresponds to (based on original NFA end states).
+ * - Lexical analysis: implements longest-match tokenization with backtracking to the last
+ * accepting state, skips tokens of type 'TM_BLANK' (whitespace), provides detailed error
+ * messages on unrecognized input, including expected symbols and current DFA state.
+ * - DFA inspection: offers 'displayDFA' for debugging (shows accept states and transitions)
+ * and 'generatorDotFile' to export the lexer DFA to Graphviz format, labeling accept states
+ * with their primary token class name.
+ */
+
 #include "lexer.h"
 #include "regex_parser.h"
 #include "regex_simplifier.h"
