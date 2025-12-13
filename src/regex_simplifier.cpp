@@ -1,3 +1,18 @@
+/*
+* regex_simplifier.cpp - implements a regex simplifier that rewrites syntactic sugar operators
+ * ('?' for optional and '+' for one-or-more) into their equivalent forms using only core
+ * operators (*, |, parentheses, and explicit concatenation). It features:
+ * - '?' is expanded as `(X|ε)`, where ε is represented by an epsilon `CharSet` token.
+ * - '+' is expanded as `XX*` (i.e., one occurrence followed by Kleene star).
+ * - The input is a token stream (from preprocessing) that may contain '?', '+', etc.
+ * - The output is a token stream containing only the primitive operators supported
+ * by the NFA builder: '*', '|', '(', ')', and the explicit concatenation operator.
+ * - isSimplified: checks whether a token sequence contains only these primitive operators,
+ * indicating it is ready for NFA construction.
+ * - This simplification step enables the NFA builder to handle only a minimal set of operators
+ *  while still supporting common regex extensions.
+ */
+
 #include "regex_simplifier.h"
 #include <stack>
 #include <stdexcept>
