@@ -1,3 +1,21 @@
+/*
+ * nfa.h - defines the core data structures and interfaces for representing and
+ * constructing NFAs used in a regex-to-automaton pipeline. It features:
+ * - CharRange & CharSet: support efficient representation of character sets
+ * (including ranges like [a-z]) and epsilon transitions. `CharSet` provides
+ * membership testing (`match`) and DOT-friendly string output.
+ * - Node: a shared_ptr to a uniquely identified state node with optional debug name.
+ * - Edge: represents a transition labeled by a `CharSet` (not a single char or string),
+ * enabling compact representation of character class transitions.
+ * - NFAUnit: encapsulates an NFA fragment with explicit `start` and `end` nodes
+ * and a list of edges.
+ * - Builder functions (createBasicElement & createUnion & createConcat & createStar
+ * & createQuestion & createPlus): implement Thompson's construction for regex operators,
+ * including syntactic sugar (?, +).
+ * - Utility functions: `displayNFA` prints NFA structure to console; `generateDotFile_NFA`
+ * exports it to Graphviz.
+ */
+
 #pragma once
 
 #include <string>
