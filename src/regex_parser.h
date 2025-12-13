@@ -1,3 +1,17 @@
+/*
+ * regex_parser.h - defines the core interfaces for parsing and converting a regular expression
+ * into an NFA. It provides:
+ * - Token representation: supports operators and 'CharSet'-based operands.
+ * - Preprocessing utilities: `preprocessRegex` tokenizes a raw regex string and handles
+ * character classes (e.g., [a-z]), while `insertConcatSymbols` inserts explicit concatenation
+ * operators (denoted by `EXPLICIT_CONCAT_OP`) where needed.
+ * - InfixToPostfix: converts a tokenized infix regex into postfix notation using
+ * the Shunting-yard algorithm with custom ISP/ICP precedence rules.
+ * - regexToNFA: constructs an NFA from a postfix token sequence using Thompson’s construction.
+ * - Supporting declarations: a global `EXPLICIT_CONCAT_OP` constant, a `RegexSyntaxError`
+ * exception type for parse-time errors, and `CharSet` from `nfa.h` for symbol representation.
+ */
+
 #pragma once
 
 #include <string>
