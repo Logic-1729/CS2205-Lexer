@@ -1,3 +1,11 @@
+/*
+ * dfa.h - declares the data structures and functions for DFA construction
+ * from an NFA using subset construction. It defines:
+ * - DFAState: a DFA state represented by a unique ID, a set of NFA state IDs it corresponds to,
+ * and a human-readable name; it supports comparison via the underlying NFA state set.
+ * - DFATransition: a deterministic transition between two DFA states labeled by a 'CharSet'.
+ */
+
 #pragma once
 
 #include <string>
