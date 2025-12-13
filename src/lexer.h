@@ -1,3 +1,13 @@
+/*
+ * lexer.h - defines a lexical analyzer (lexer) that supports user-defined token classes
+ * specified by regular expressions. It builds a unified DFA from multiple regular expressions
+ * (one per token class) to perform efficient lexical analysis. It defines:
+ * - TokenClass: represents a named token type with an associated regex pattern.
+ * - LexerToken: the output token produced during lexing, containing lexeme, token class info,
+ * and position.
+ * - Lexer: defines functions of the DFA construction and tokenization logic.
+ */
+
 #pragma once
 
 #include "dfa.h"
