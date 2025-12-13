@@ -1,3 +1,16 @@
+/*
+ * dfa_converter.cpp - implements the subset construction algorithm to convert an NFA into a DFA.
+ * Key features include:
+ * - Epsilon-closure computation with per-node caching to avoid redundant DFS traversals.
+ * - A 'move' function that computes reachable NFA states from a DFA state on a single input charact
+ * - Automatic alphabet extraction from NFA transitions, limited to printable ASCII characters
+ * (0-127) to keep the DFA manageable.
+ * - BFS-driven DFA state exploration, where each DFA state corresponds to a unique set of NFA state.
+ * - Transition deduplication to avoid redundant edges between the same state pair on the same symbol.
+ * - Support for 'CharSet'-based symbols (from nfa.h) in transitions, though the current implementation
+ * processes transitions character-by-character during construction and creates one 'CharSet' per char.
+ */
+
 #include "dfa.h"
 #include <queue>
 #include <algorithm>
@@ -17,7 +30,7 @@ std::set<int> getSingleNodeClosure(int startNodeId, const NFAUnit& nfa) {
 
     std::set<int> closure;
     std::vector<int> stack;
-    
+
     stack.push_back(startNodeId);
     closure.insert(startNodeId);
 
@@ -67,14 +80,14 @@ DFAState move(const DFAState& state, char inputChar, const NFAUnit& nfa) {
     for (int nfaStateId : state.nfaStates) {
         for (const Edge& e : nfa.edges) {
             // 检查：非epsilon边 && 起点匹配 && 字符匹配
-            if (! e.symbol.isEpsilon && 
-                e.startName->id == nfaStateId && 
+            if (! e.symbol.isEpsilon &&
+                e.startName->id == nfaStateId &&
                 e.symbol.match(inputChar)) {
                 targetStates.insert(e.endName->id);
             }
         }
     }
-    
+
     DFAState nextState;
     nextState.nfaStates = targetStates;
     return nextState;
@@ -83,7 +96,7 @@ DFAState move(const DFAState& state, char inputChar, const NFAUnit& nfa) {
 // 收集NFA中所有可能的输入字符
 std::set<char> collectAlphabet(const NFAUnit& nfa) {
     std::set<char> alphabet;
-    
+
     for (const Edge& e : nfa.edges) {
         if (!e.symbol. isEpsilon) {
             for (const auto& range : e. symbol.ranges) {
@@ -94,16 +107,16 @@ std::set<char> collectAlphabet(const NFAUnit& nfa) {
             }
         }
     }
-    
+
     return alphabet;
 }
 
 // 检查转移是否已存在
-bool transitionExists(int fromId, int toId, char c, 
+bool transitionExists(int fromId, int toId, char c,
                       const std::vector<DFATransition>& transitions) {
     for (const auto& t : transitions) {
-        if (t. fromStateId == fromId && 
-            t.toStateId == toId && 
+        if (t. fromStateId == fromId &&
+            t.toStateId == toId &&
             t. transitionSymbol. match(c)) {
             return true;
         }
@@ -114,10 +127,10 @@ bool transitionExists(int fromId, int toId, char c,
 void buildDFAFromNFA(const NFAUnit& nfa,
                      std::vector<DFAState>& dfaStates,
                      std::vector<DFATransition>& dfaTransitions) {
-    closureCache.clear(); 
+    closureCache.clear();
     dfaStates.clear();
     dfaTransitions.clear();
-    
+
     std::map<std::set<int>, int> existingStates;
     int dfaCounter = 0;
 
@@ -126,13 +139,13 @@ void buildDFAFromNFA(const NFAUnit& nfa,
     DFAState initState = epsilonClosure(initSet, nfa);
     initState.id = dfaCounter++;
     initState.stateName = std::to_string(initState.id);
-    
+
     dfaStates.push_back(initState);
     existingStates[initState.nfaStates] = initState.id;
 
     // 收集字母表
     std::set<char> alphabet = collectAlphabet(nfa);
-    
+
     std::cout << "Alphabet size: " << alphabet.size() << " characters" << std::endl;
 
     // BFS构建DFA
@@ -143,30 +156,30 @@ void buildDFAFromNFA(const NFAUnit& nfa,
     while (!workQueue.empty()) {
         int currentIdx = workQueue.front();
         workQueue.pop();
-        
+
         if (processed.count(currentIdx)) continue;
         processed.insert(currentIdx);
-        
+
         if (currentIdx >= (int)dfaStates.size()) continue;
-        
+
         DFAState& current = dfaStates[currentIdx];
 
         // 对每个字符尝试转移
         for (char c : alphabet) {
             DFAState moved = move(current, c, nfa);
-            
+
             if (! moved.nfaStates. empty()) {
                 DFAState closure = epsilonClosure(moved.nfaStates, nfa);
 
                 int targetId;
                 auto it = existingStates.find(closure. nfaStates);
-                
+
                 if (it == existingStates.end()) {
                     // 新状态
                     closure.id = dfaCounter++;
                     closure.stateName = std::to_string(closure.id);
                     targetId = closure.id;
-                    
+
                     dfaStates.push_back(closure);
                     existingStates[closure.nfaStates] = targetId;
                     workQueue.push(dfaStates.size() - 1);
@@ -182,7 +195,7 @@ void buildDFAFromNFA(const NFAUnit& nfa,
             }
         }
     }
-    
-    std::cout << "DFA construction complete: " << dfaStates.size() 
+
+    std::cout << "DFA construction complete: " << dfaStates.size()
               << " states, " << dfaTransitions.size() << " transitions" << std::endl;
 }
