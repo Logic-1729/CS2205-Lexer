@@ -1,3 +1,24 @@
+/*
+ * nfa_builder.cpp - implements Thompson's construction algorithm to build an NFA from
+ * a postfix regular expression token sequence. It provides functions to construct NFA fragments
+ * for basic symbols and regex operators, and combines them according to the postfix order.
+ * It features:
+ * - createBasicElement: creates an NFA for a single `CharSet` (including character ranges).
+ * - Operator handlers:
+ *   * createUnion for '|'
+ *   * createConcat for explicit concatenation
+ *   * createStar for '*'
+ *   * createQuestion for '?' (0 or 1)
+ *   * createPlus for '+' (1 or more)
+ * - All NFAs use epsilon transitions (represented by default-constructed `CharSet`) for
+ * control flow (e.g., branching in union, looping in star).
+ * - createConcat: performs node merging by redirecting edges that reference the right
+ * operand's start node to the left operand's end node, avoiding unnecessary epsilon transitions.
+ * - regexToNFA: uses a stack to process the postfix token stream, applying operator logic
+ * and operand construction, and validates stack state for correctness.
+ * - globalNodeCounter: ensures unique node IDs across the entire NFA.
+ */
+
 #include "nfa.h"
 #include "regex_parser.h"
 #include <stack>
