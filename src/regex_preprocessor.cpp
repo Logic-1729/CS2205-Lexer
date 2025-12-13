@@ -1,3 +1,22 @@
+/*
+ * regex_preprocessor.cpp - implements the preprocessing stage of a regular expression
+ * parser. It converts a raw regex string into a token stream suitable for parsing
+ * and NFA construction. It features:
+ * - Character class parsing: handles `[...]` syntax by parsing ranges (e.g., `a-z`)
+ *  and individual characters into a `CharSet` operand token. Throws `RegexSyntaxError`
+ * on malformed ranges or unmatched brackets.
+ * - String literal support: processes quoted strings (e.g., `"abc"`) as sequences
+ * of literal character tokens, with support for common escape sequences (`\n`, `\t`, `\\`, etc.).
+ * - Basic tokenization: recognizes operators (`(`, `)`, `*`, `|`, `?`, `+`) and treats
+ * all other characters as individual 'CharSet' operands.
+ * - Explicit concatenation insertion: scans the initial token stream and inserts the explicit
+ * concatenation operator (`&`, defined as `EXPLICIT_CONCAT_OP`) between tokens where
+ * concatenation is implied (e.g., between an operand and a following operand, or after `)`
+ * before `(`).
+ * - The output is a vector of `Token` objects containing only operands (`CharSet`) and
+ * operators (including the inserted `&`), ready for conversion to postfix notation.
+ */
+
 #include "regex_parser.h"
 #include <cctype>
 #include <iostream>
