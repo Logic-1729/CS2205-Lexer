@@ -1,3 +1,28 @@
+/*
+ * main.cpp - implements the main entry point and interactive modes of the regex-to-automaton
+ * and lexical analyzer system. It provides three operational modes:
+ * - Single Regex Mode:
+ *   * takes a single regular expression from user input.
+ *   * processes it through the full pipeline: processing -> infix_to_postfix -> NFA (Thompson)
+ * -> DFA (subset construction) -> DFA minimization.
+ *   * outputs NFA, DFA, and minimized DFA in both console-readable and Graphviz (.dot) formats.
+ *   * attempts to generate PNG visualizations using Graphviz if installed.
+ *   * writes all output files to a user-specified directory (default: current directory).
+ * - Custom Lexer Mode:
+ *   * allows the user to define multiple token class (name + regex).
+ *   * builds a unified DFA for all token regexes using the generated lexer.
+ *   * tokenizes user-provided input strings using the generated lexer.
+ *   * displays tokens in a formatted table and exports the lexer DFA to .dot (and PNG).
+ * - Predefined Lexer Mode:
+ *   * uses built-in token definitions (simulating the 'lang.l'-style specification).
+ *   * builds and applies the corresponding lexer to user input, with the same token display
+ * and DFA export capabilities as the custom mode.
+ * - Additional utilities:
+ *   * Shell-safe path handling, directory creation, and file path normalization (cross-platform).
+ *   * Robust error handling for regex syntax errors and system failures.
+ *   * Interactive CLI with clear menus and formatted token output.
+ */
+
 #include "lexer.h"
 #include "regex_parser.h"
 #include "nfa.h"
