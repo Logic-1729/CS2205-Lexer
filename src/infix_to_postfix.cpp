@@ -1,3 +1,18 @@
+/*
+ * infix_to_postfix.cpp - implements the Shunting-yard algorithm to convert a tokenized infix regular expression
+ * into postfix notation (Reverse Polish Notation), which is suitable for subsequent NFA construction.
+ * It features:
+ * - Supports the following operators: '|', '*', '?', '+', and an explicit concatenation operator
+ * (EXPLICIT_CONCAT_OP, typically '&').
+ * - Uses distinct In-Stack Priority (ISP) and In-Coming Priority (ICP) tables to correctly
+ * handle operator precedence and associativity.
+ * - Operator precedence (from highest to lowest): '*', '?', '+' > explicit concatenation > '|'.
+ * - Parentheses '(' and ')' are handled according to standard shunting-yard rules.
+ * - A sentinel token '#' is appended to both input and operator stack to simplify termination logic.
+ * - Syntax errors (e.g., unbalanced parentheses, invalid operator sequences) are detected
+ * and reported via `RegexSyntaxError` exceptions.
+ */
+
 #include "regex_parser.h"
 #include <map>
 #include <stack>
