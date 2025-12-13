@@ -1,3 +1,24 @@
+/*
+ * dfa_minimizer.cpp - implements a DFA minimization algorithm based on partition refinement.
+ * It takes a DFA (represented by `dfaStates` and `dfaTransitions`) and reduces it to
+ * an equivalent minimal DFA by merging indistinguishable states. Key steps:
+ * - Initial partitioning of states into accepting and non-accepting sets,
+ * where acceptance is determined by whether the state's underlying NFA state set
+ * contains the original NFA's final state (`originalNFAEndId`).
+ * - Iterative refinement of partitions: states in the same partition are split
+ * if they exhibit different transition behaviors (i.e., they transition to
+ * states in different partitions) under any input symbol from the DFA's alphabet.
+ * - Transition signatures are computed per state by recording, for every symbol
+ * in the alphabet, the partition index of the target state (or -1 if no transition).
+ * - After convergence, a minimized DFA is constructed where each partition becomes
+ * a single state, preserving the original start state and acceptance condition.
+ * - Transitions in the minimized DFA are derived from a representative state of each
+ * partition, with deduplication to avoid duplicate edges.
+ * The implementation assumes: The input DFA uses `CharSet` as transition labels.
+ * Acceptance is solely determined by inclusion of `originalNFAEndId` in the NFA state set.
+ * The start state of the input DFA is `dfaStates[0]`.
+ */
+
 #include "dfa.h"
 #include <map>
 #include <algorithm>
