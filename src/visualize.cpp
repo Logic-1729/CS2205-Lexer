@@ -1,3 +1,20 @@
+/*
+ * visualize.cpp - provides functions to display and export and DFAs in human-readable
+ * and Graphviz-compatible formats. It features:
+ * - Aggregation of parallel edges: multiple transitions between the same pair of
+ * states (with different symbols) are grouped and displayed as a comma-separated label list.
+ * - Deterministic output: labels are deduplicated, sorted, and consistently formatted
+ * to ensure stable and readable DOT output.
+ * - NFA visualization: 'displayNFA' prints NFA transitions to stdout; 'generateDotFile_NFA'
+ * exports the NFA to a .dot file with proper start and accept states.
+ * - DFA visualization: 'displayDFA' lists DFA states (marking accepting states) and aggregated
+ * transitions; 'generateDotFile_DFA' exports the DFA to a .dot file, assuming the first state
+ * is initial and marking states that contain the original NFA's final state as accepting.
+ * - Helper utilities: 'EdgeKey' enables grouping transitions by (from, to) state pairs;
+ * 'mergeLabels' combines symbol strings into a canonical representation; 'getDFAStateName'
+ * resolves state IDs to human-readable names.
+ */
+
 #include "nfa.h"
 #include "dfa.h"
 #include <fstream>
