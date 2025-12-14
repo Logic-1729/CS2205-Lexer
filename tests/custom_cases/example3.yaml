@@ -1,15 +1,1 @@
-name: "Example3"
-token_classes:
-  - name: a*bc
-    regex: a*bc
-  - name: ab*c
-    regex: ab*c
-  - name: abc*
-    regex: abc*
-inputs:
-  - lexeme: "abc"
-    expected_token: "a*bc"
-  - lexeme: "ab"
-    expected_token: "abc*"
-  - lexeme: "bbbbbbc"
-    expected_token: "ab*c"
+
