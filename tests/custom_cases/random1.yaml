@@ -1,0 +1,15 @@
+name: "random1"
+token_classes:
+  - name: first
+    regex: abcd
+  - name: second
+    regex: abc*
+  - name: third
+    regex: abc*d
+inputs:
+  - lexeme: "abcd"
+    expected_token: "first"
+  - lexeme: "abcccc"
+    expected_token: "second"
+  - lexeme: "abcccccd"
+    expected_token: "third"

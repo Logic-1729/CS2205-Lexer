@@ -1,0 +1,19 @@
+name: "random2"
+token_classes:
+  - name: first
+    regex: zxgr
+  - name: second
+    regex: zx*
+  - name: third
+    regex: zx*g
+  - name: forth
+    regex: zx*gr
+inputs:
+  - lexeme: "zxgr"
+    expected_token: "first"
+  - lexeme: "zxxxxxxg"
+    expected_token: "third"
+  - lexeme: "zxxgr"
+    expected_token: "forth"
+  - lexeme: "zxxxxxx"
+    expected_token: "second"
