@@ -10,19 +10,17 @@
  * - Support for 'CharSet'-based symbols (from nfa.h) in transitions, though the current implementation
  * processes transitions character-by-character during construction and creates one 'CharSet' per char.
  */
-
 #include "dfa.h"
 #include <queue>
 #include <algorithm>
 #include <map>
 #include <vector>
 #include <set>
-#include <iostream>
 
 // 全局缓存：NFA节点ID -> Epsilon闭包集合
 static std::map<int, std::set<int>> closureCache;
 
-// 计算单个状态的 Epsilon Closure (带缓存的 DFS)
+// 计算单个状态的 Epsilon Closure (带缓存的 DFS/BFS)
 std::set<int> getSingleNodeClosure(int startNodeId, const NFAUnit& nfa) {
     if (closureCache.count(startNodeId)) {
         return closureCache[startNodeId];
@@ -30,7 +28,7 @@ std::set<int> getSingleNodeClosure(int startNodeId, const NFAUnit& nfa) {
 
     std::set<int> closure;
     std::vector<int> stack;
-
+    
     stack.push_back(startNodeId);
     closure.insert(startNodeId);
 
@@ -73,129 +71,112 @@ DFAState epsilonClosure(const std::set<int>& states, const NFAUnit& nfa) {
     return state;
 }
 
-// Move操作：给定DFA状态和输入字符，返回目标NFA状态集
-DFAState move(const DFAState& state, char inputChar, const NFAUnit& nfa) {
+DFAState move(const DFAState& state, const CharSet& symbol, const NFAUnit& nfa) {
     std::set<int> targetStates;
+    // Use a representative character from the disjoint input set to check coverage
+    char representative = 0;
+    if (!symbol.ranges.empty()) {
+        representative = symbol.ranges.begin()->start;
+    }
 
     for (int nfaStateId : state.nfaStates) {
         for (const Edge& e : nfa.edges) {
-            // 检查：非epsilon边 && 起点匹配 && 字符匹配
-            if (! e.symbol.isEpsilon &&
-                e.startName->id == nfaStateId &&
-                e.symbol.match(inputChar)) {
+            // Instead of exact equality (e.symbol == symbol), check if edge covers the input range.
+            // Since 'symbol' comes from a disjoint partition of all boundaries, 
+            // e.symbol covers 'symbol' iff it matches a representative char.
+            if (!e.symbol.isEpsilon && e.startName->id == nfaStateId && e.symbol.match(representative)) {
                 targetStates.insert(e.endName->id);
             }
         }
     }
-
     DFAState nextState;
     nextState.nfaStates = targetStates;
     return nextState;
 }
 
-// 收集NFA中所有可能的输入字符
-std::set<char> collectAlphabet(const NFAUnit& nfa) {
-    std::set<char> alphabet;
-
-    for (const Edge& e : nfa.edges) {
-        if (!e.symbol. isEpsilon) {
-            for (const auto& range : e. symbol.ranges) {
-                // 只收集ASCII可打印字符，避免字母表过大
-                for (int c = (int)range.start; c <= (int)range. end && c <= 127; c++) {
-                    alphabet.insert((char)c);
-                }
-            }
-        }
-    }
-
-    return alphabet;
-}
-
-// 检查转移是否已存在
-bool transitionExists(int fromId, int toId, char c,
-                      const std::vector<DFATransition>& transitions) {
+bool isTransitionInVector(int fromId, int toId,
+                          const CharSet& symbol,
+                          const std::vector<DFATransition>& transitions) {
     for (const auto& t : transitions) {
-        if (t. fromStateId == fromId &&
+        if (t.fromStateId == fromId &&
             t.toStateId == toId &&
-            t. transitionSymbol. match(c)) {
+            t.transitionSymbol == symbol) {
             return true;
         }
     }
     return false;
 }
 
-void buildDFAFromNFA(const NFAUnit& nfa,
-                     std::vector<DFAState>& dfaStates,
-                     std::vector<DFATransition>& dfaTransitions) {
-    closureCache.clear();
-    dfaStates.clear();
-    dfaTransitions.clear();
-
-    std::map<std::set<int>, int> existingStates;
-    int dfaCounter = 0;
-
-    // 创建初始状态
-    std::set<int> initSet = {nfa.start->id};
-    DFAState initState = epsilonClosure(initSet, nfa);
-    initState.id = dfaCounter++;
-    initState.stateName = std::to_string(initState.id);
-
-    dfaStates.push_back(initState);
-    existingStates[initState.nfaStates] = initState.id;
-
-    // 收集字母表
-    std::set<char> alphabet = collectAlphabet(nfa);
-
-    std::cout << "Alphabet size: " << alphabet.size() << " characters" << std::endl;
-
-    // BFS构建DFA
-    std::queue<int> workQueue;
-    workQueue.push(0);
-    std::set<int> processed;
-
-    while (!workQueue.empty()) {
-        int currentIdx = workQueue.front();
-        workQueue.pop();
-
-        if (processed.count(currentIdx)) continue;
-        processed.insert(currentIdx);
-
-        if (currentIdx >= (int)dfaStates.size()) continue;
-
-        DFAState& current = dfaStates[currentIdx];
-
-        // 对每个字符尝试转移
-        for (char c : alphabet) {
-            DFAState moved = move(current, c, nfa);
-
-            if (! moved.nfaStates. empty()) {
-                DFAState closure = epsilonClosure(moved.nfaStates, nfa);
-
-                int targetId;
-                auto it = existingStates.find(closure. nfaStates);
-
-                if (it == existingStates.end()) {
-                    // 新状态
-                    closure.id = dfaCounter++;
-                    closure.stateName = std::to_string(closure.id);
-                    targetId = closure.id;
-
-                    dfaStates.push_back(closure);
-                    existingStates[closure.nfaStates] = targetId;
-                    workQueue.push(dfaStates.size() - 1);
-                } else {
-                    targetId = it->second;
-                }
-
-                // 添加转移（避免重复）
-                if (! transitionExists(current.id, targetId, c, dfaTransitions)) {
-                    CharSet transSymbol(c);
-                    dfaTransitions.push_back({current. id, targetId, transSymbol});
-                }
+// Helper to generate disjoint canonical inputs from NFA edges
+std::vector<CharSet> getCanonicalInputs(const NFAUnit& nfa) {
+    std::set<int> points;
+    // Collect all interval boundaries
+    for (const Edge& e : nfa.edges) {
+        if (!e.symbol.isEpsilon) {
+            for (const auto& r : e.symbol.ranges) {
+                points.insert((int)r.start);
+                points.insert((int)r.end + 1);
             }
         }
     }
 
-    std::cout << "DFA construction complete: " << dfaStates.size()
-              << " states, " << dfaTransitions.size() << " transitions" << std::endl;
+    std::vector<int> sortedPoints(points.begin(), points.end());
+    std::vector<CharSet> inputs;
+
+    for (size_t i = 0; i < sortedPoints.size(); ++i) {
+        if (i + 1 < sortedPoints.size()) {
+            int start = sortedPoints[i];
+            int end = sortedPoints[i+1] - 1;
+            if (start <= end) {
+                inputs.push_back(CharSet((char)start, (char)end));
+            }
+        }
+    }
+    return inputs;
+}
+
+void buildDFAFromNFA(const NFAUnit& nfa,
+                     std::vector<DFAState>& dfaStates,
+                     std::vector<DFATransition>& dfaTransitions) {
+    closureCache.clear(); 
+    
+    std::map<std::set<int>, int> existingStates;
+    int dfaCounter = 0;
+
+    std::set<int> initSet = {nfa.start->id};
+    DFAState initState = epsilonClosure(initSet, nfa);
+    initState.id = dfaCounter++;
+    initState.stateName = std::to_string(initState.id);
+    
+    dfaStates.push_back(initState);
+    existingStates[initState.nfaStates] = initState.id;
+
+    // Collect disjoint input ranges covering all transitions
+    std::vector<CharSet> inputs = getCanonicalInputs(nfa);
+
+    for (size_t i = 0; i < dfaStates.size(); ++i) {
+        DFAState current = dfaStates[i]; 
+
+        for (const auto& symbol : inputs) {
+            DFAState moved = move(current, symbol, nfa);
+            if (!moved.nfaStates.empty()) {
+                DFAState closure = epsilonClosure(moved.nfaStates, nfa);
+
+                auto it = existingStates.find(closure.nfaStates);
+                if (it == existingStates.end()) {
+                    closure.id = dfaCounter++;
+                    closure.stateName = std::to_string(closure.id);
+                    dfaStates.push_back(closure);
+                    existingStates[closure.nfaStates] = closure.id;
+                } else {
+                    closure.id = it->second;
+                    closure.stateName = dfaStates[it->second].stateName;
+                }
+
+                if (!isTransitionInVector(current.id, closure.id, symbol, dfaTransitions)) {
+                    dfaTransitions.push_back({current.id, closure.id, symbol});
+                }
+            }
+        }
+    }
 }

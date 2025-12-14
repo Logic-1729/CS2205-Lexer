@@ -16,7 +16,6 @@
  * - The output is a vector of `Token` objects containing only operands (`CharSet`) and
  * operators (including the inserted `&`), ready for conversion to postfix notation.
  */
-
 #include "regex_parser.h"
 #include <cctype>
 #include <iostream>

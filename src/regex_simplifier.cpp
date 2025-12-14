@@ -12,7 +12,6 @@
  * - This simplification step enables the NFA builder to handle only a minimal set of operators
  *  while still supporting common regex extensions.
  */
-
 #include "regex_simplifier.h"
 #include <stack>
 #include <stdexcept>
@@ -20,13 +19,13 @@
 std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
     std::vector<Token> result;
     
-    for (size_t i = 0; i < tokens.size(); ++i) {
+    for (size_t i = 0; i < tokens. size(); ++i) {
         const Token& token = tokens[i];
         
         if (token.isOperator()) {
             char op = token.opVal;
             
-            if (op == '?') {  // 修复：单引号内只有一个字符
+            if (op == '? ') {
                 // X? => (X|ε)
                 if (result.empty()) {
                     throw RegexSyntaxError("?  operator without preceding operand");
@@ -36,7 +35,7 @@ std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
                 result.pop_back();
                 
                 // 构造 (X|ε)
-                result.push_back(Token('('));
+                result. push_back(Token('('));
                 result.push_back(operand);
                 result.push_back(Token('|'));
                 
@@ -49,11 +48,11 @@ std::vector<Token> simplifyRegex(const std::vector<Token>& tokens) {
                 
             } else if (op == '+') {
                 // X+ => XX*
-                if (result.empty()) {
+                if (result. empty()) {
                     throw RegexSyntaxError("+ operator without preceding operand");
                 }
                 
-                Token operand = result. back();
+                Token operand = result.back();
                 // 不弹出，因为需要 XX*
                 
                 result.push_back(operand); // 添加第二个 X

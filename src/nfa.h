@@ -15,7 +15,6 @@
  * - Utility functions: `displayNFA` prints NFA structure to console; `generateDotFile_NFA`
  * exports it to Graphviz.
  */
-
 #pragma once
 
 #include <string>

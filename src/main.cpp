@@ -22,7 +22,6 @@
  *   * Robust error handling for regex syntax errors and system failures.
  *   * Interactive CLI with clear menus and formatted token output.
  */
-
 #include "lexer.h"
 #include "regex_parser.h"
 #include "nfa.h"

@@ -11,7 +11,6 @@
  * - Supporting declarations: a global `EXPLICIT_CONCAT_OP` constant, a `RegexSyntaxError`
  * exception type for parse-time errors, and `CharSet` from `nfa.h` for symbol representation.
  */
-
 #pragma once
 
 #include <string>

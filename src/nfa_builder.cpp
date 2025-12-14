@@ -18,7 +18,6 @@
  * and operand construction, and validates stack state for correctness.
  * - globalNodeCounter: ensures unique node IDs across the entire NFA.
  */
-
 #include "nfa.h"
 #include "regex_parser.h"
 #include <stack>

@@ -7,7 +7,6 @@
  * and position.
  * - Lexer: defines functions of the DFA construction and tokenization logic.
  */
-
 #pragma once
 
 #include "dfa.h"

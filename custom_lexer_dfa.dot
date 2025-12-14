@@ -1,0 +1,15 @@
+digraph LexerDFA {
+  rankdir=LR;
+  node [shape=circle, fontsize=10];
+  __start [shape=none, label=""];
+  __start -> 0;
+  1 [shape=doublecircle, label="1\nshort"];
+  2 [shape=doublecircle, label="2\nshort"];
+  3 [shape=doublecircle, label="3\nlong"];
+  4 [shape=doublecircle, label="4\nlong"];
+  0 -> 1 [label="a", fontsize=8];
+  1 -> 2 [label="b", fontsize=8];
+  2 -> 3 [label="b", fontsize=8];
+  3 -> 4 [label="b", fontsize=8];
+  4 -> 4 [label="b", fontsize=8];
+}

@@ -18,7 +18,6 @@
  * Acceptance is solely determined by inclusion of `originalNFAEndId` in the NFA state set.
  * The start state of the input DFA is `dfaStates[0]`.
  */
-
 #include "dfa.h"
 #include <map>
 #include <algorithm>

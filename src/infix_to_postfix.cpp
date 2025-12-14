@@ -12,7 +12,6 @@
  * - Syntax errors (e.g., unbalanced parentheses, invalid operator sequences) are detected
  * and reported via `RegexSyntaxError` exceptions.
  */
-
 #include "regex_parser.h"
 #include <map>
 #include <stack>
