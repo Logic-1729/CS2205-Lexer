@@ -1,0 +1,15 @@
+name: "Example2"
+token_classes:
+  - name: ab_long
+    regex: ab*
+  - name: ab_short
+    regex: ab
+  - name: abc
+    regex: abc*
+inputs:
+  - lexeme: "ab"
+    expected_token: "ab_long"
+  - lexeme: "abbb"
+    expected_token: "ab_long"
+  - lexeme: "abccc"
+    expected_token: "abc"
