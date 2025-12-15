@@ -1,0 +1,17 @@
+name: "Example4"
+token_classes:
+  - name: aa*b
+    regex: aa*b
+  - name: a*b
+    regex: a*b
+  - name: b*c
+    regex: b*c
+inputs:
+  - lexeme: "aaaaaaab"
+    expected_token: "aa*b"
+  - lexeme: "ab"
+    expected_token: "aa*b"
+  - lexeme: "b"
+    expected_token: "a*b"
+  - lexeme: "bbbbbbc"
+    expected_token: "b*c"
