@@ -6,10 +6,12 @@ token_classes:
     regex: ab*c
   - name: abc*
     regex: abc*
+  - name: a*b*c
+    regex: a*b*c
 inputs:
   - lexeme: "abc"
     expected_token: "a*bc"
   - lexeme: "ab"
     expected_token: "abc*"
   - lexeme: "bbbbbbc"
-    expected_token: "ab*c"
+    expected_token: "a*b*c"
