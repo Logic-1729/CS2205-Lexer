@@ -1,0 +1,17 @@
+name: "Example5"
+token_classes:
+  - name: num
+    regex: [0-9]
+  - name: num*
+    regex: [0-9]*
+  - name: a_num*
+    regex: a[0-9]*
+inputs:
+  - lexeme: "0"
+    expected_token: "num"
+  - lexeme: "123"
+    expected_token: "num*"
+  - lexeme: "a0"
+    expected_token: "a_num*"
+  - lexeme: "a123"
+    expected_token: "a_num*"
