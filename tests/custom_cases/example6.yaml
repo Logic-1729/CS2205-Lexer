@@ -1,0 +1,17 @@
+name: "Example6"
+token_classes:
+  - name: a
+    regex: [a-z]
+  - name: ba
+    regex: [b-z][a-z]
+  - name: a*
+    regex: [a-z]*
+inputs:
+  - lexeme: "b"
+    expected_token: "a"
+  - lexeme: "bb"
+    expected_token: "ba"
+  - lexeme: "ab"
+    expected_token: "a*"
+  - lexeme: "abc"
+    expected_token: "a*"
