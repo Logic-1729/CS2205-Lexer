@@ -202,5 +202,37 @@ TEST_FILE="tests/test_cases2.txt"  # <-- 修改这里为您想要测试的文件
 *   `min_dfa_graph.dot`: 最小化 DFA 的 Graphviz 描述文件。
 *   `min_dfa.png`: 最小化 DFA 的可视化图片。
 
+## 测试指南
+
+本项目提供了自动化测试脚本 `test_correctness.sh`，用于批量验证正则表达式转换的正确性。
+
+### 1. 安装依赖
+
+```bash
+pip install pydot
+```
+
+### 2. 赋予脚本执行权限
+
+```bash
+chmod +x test_correctness.sh
+```
+
+### 3. 修改测试用例文件
+
+在 `test_correctness.sh` 脚本中，可以通过修改 `TEST_FILE` 变量来指定不同的测试用例文件：
+
+```bash
+TEST_FILE="tests/test_cases2.txt"
+```
+
+将 `test_cases2.txt` 更改为您希望使用的测试文件名称（需位于 `tests/` 目录下）。
+
+### 4. 运行测试脚本
+
+```bash
+./test_correctness.sh
+```
+
 ---
 *注意：生成的文件夹名称可能会保留部分特殊字符（如括号），在终端操作时请使用引号包裹路径。*
